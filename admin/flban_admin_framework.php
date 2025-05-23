@@ -200,21 +200,6 @@ if ( ! class_exists( 'BF_Admin_Page_Class') ) :
      * @since 0.1
      */
     public function __construct($args) {
-     * Possible keys within $args:
-     *  > menu (array|string) - (string) -> this the name of the parent Top-Level-Menu or a TopPage object to create 
-     *                      this page as a sub menu to.
-     *              (array)  -> top - Slug for the New Top level Menu page to create.
-     *  > page_title (string) - The name of this page (good for Top level and sub menu pages)
-     *  > capability (string) (optional) - The capability needed to view the page (good for Top level and sub menu pages)
-     *  > menu_title (string) - The name of the Top-Level-Menu (Top level Only)
-     *  > menu_slug (string) - A unique string identifying your new menu (Top level Only)
-     *  > icon_url (string) (optional) - URL to the icon, decorating the Top-Level-Menu (Top level Only)
-     *  > position (string) (optional) - The position of the Menu in the ACP (Top level Only)
-     *  > option_group (string) (required) - the name of the option to create in the database
-     *
-     *
-     */
-    public function __construct($args) {
       if ( is_array( $args ) ) {
         if ( isset( $args['option_group'] ) ) {
           $this->option_group = $args['option_group'];
