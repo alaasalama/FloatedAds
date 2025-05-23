@@ -7,28 +7,30 @@
  * @since 1.0
  */
 
-var $ =jQuery.noConflict();
+var $ = jQuery.noConflict();
 //code editor
-var Ed_array = Array;
+var Ed_array = []; // Initialize as an empty array
 //upload button
 var formfield1;
 var formfield2;
 var file_frame;
 
 jQuery(document).ready(function($) {
+  'use strict';
 
-  apc_init();  
+  apc_init();
   //editor rezise fix
   $(window).resize(function() {
     $.each(Ed_array, function() {
       var ee = this;
-      $(ee.getScrollerElement()).width(100); // set this low enough
-      width = $(ee.getScrollerElement()).parent().width();
-      $(ee.getScrollerElement()).width(width); // set it to
+      var $scroller = $(ee.getScrollerElement());
+      $scroller.width(100); // set this low enough
+      var width = $scroller.parent().width(); // Ensure width is declared
+      $scroller.width(width); // set it to
       ee.refresh();
     });
   });
-}); //end ready
+}); // end ready
 
 /**
  * apc_init initate fields
@@ -44,10 +46,10 @@ function apc_init(){
   //iphone checkboxs
   fancyCheckbox();
   //select 2
-  //by_FloatedAds removing this function declaration and declare it elsewhere
-  //  fancySelect();
+  //by_FloatedAds removing this function declaration and declare it elsewhere - This comment seems outdated as fancySelect() is defined below.
+  // fancySelect(); 
   // repeater edit
-  bindOn('click','.at-re-toggle',function() {$(this).prev().toggle('slow');});
+  bindOn('click', '.at-re-toggle', function() { $(this).prev().toggle('slow'); });
   /**
    * Datepicker Field.
    *
@@ -90,7 +92,8 @@ function apc_init(){
         data     = $this.attr('rel');
         
     $.post( ajaxurl, { action: 'at_delete_file', data: data }, function(response) {
-      response == '0' ? ( alert( 'File has been successfully deleted.' ), $parent.remove() ) : alert( 'You do NOT have permission to delete this file.' );
+      // Note: These alert strings should be internationalized via wp_localize_script.
+      response === '0' ? ( alert( 'File has been successfully deleted.' ), $parent.remove() ) : alert( 'You do NOT have permission to delete this file.' );
     });
     
     return false;
@@ -147,44 +150,46 @@ function apc_init(){
  * @return void
  */
 function loadColorPicker(){
-  if ($.farbtastic){//since WordPress 3.5
-    bindOn('focus','at-color','focus', function() {load_colorPicker($(this).next());});
-    bindOn('focusout','at-color','focus', function() {hide_colorPicker($(this).next());});
+  if ($.farbtastic){ // Check if farbtastic is available (used before WP 3.5 color picker)
+    bindOn('focus', '.at-color', function() { load_colorPicker($(this).next()); }); // Removed 'focus' string, it's not needed for .on()
+    bindOn('focusout', '.at-color', function() { hide_colorPicker($(this).next()); });
 
     /**
      * Select Color Field.
      *
      * @since 1.0
      */
-    bindOn('click','.at-color-select',function(){
-      if ($(this).next('div').css('display') == 'none')
+    bindOn('click', '.at-color-select', function() {
+      if ( $(this).next('div').css('display') === 'none' ) { // Strict comparison
         load_colorPicker($(this));
-      else
+      } else {
         hide_colorPicker($(this));
+      }
     });
 
-    function load_colorPicker(ele){
-      colorPicker = $(ele).next('div');
-      input = $(ele).prev('input');
+    function load_colorPicker(ele) {
+      var colorPicker = $(ele).next('div'); // Variables should be declared with var
+      var input = $(ele).prev('input');
 
       $.farbtastic($(colorPicker), function(a) { $(input).val(a).css('background', a); });
 
       colorPicker.show();
     }
 
-    function hide_colorPicker(ele){
-      colorPicker = $(ele).next('div');
+    function hide_colorPicker(ele) {
+      var colorPicker = $(ele).next('div'); // Variables should be declared with var
       $(colorPicker).hide();
     }
     //issue #15
-    $('.at-color').each(function(){
+    $('.at-color').each(function() {
       var colo = $(this).val();
-      if (colo.length == 7)
-        $(this).css('background',colo);
+      if ( colo.length === 7 && colo.startsWith('#') ) { // Stricter check for hex color
+        $(this).css('background', colo);
+      }
     });
-  }else{
-    if ($('.at-color-iris').length>0){
-      $('.at-color-iris').wpColorPicker(); 
+  } else { // For WP 3.5+
+    if ( $('.at-color-iris').length > 0 ) {
+      $('.at-color-iris').wpColorPicker();
     }
   }
 }
@@ -220,27 +225,29 @@ function loadTimePicker(){
  * @since 1.1.5
  */
 function fancyCheckbox(){
-  $(':checkbox').each(function (){
+  $(':checkbox').each(function() {
     var $el = $(this);
-    if(! $el.hasClass('no-toggle')){
+    if ( ! $el.hasClass('no-toggle') ) {
       $el.FancyCheckbox();
-      if ($el.hasClass("conditinal_control")){
+      if ( $el.hasClass('conditinal_control') ) {
         $el.on('change', function() {
-          var $el = $(this);
-          if($el.is(':checked'))
-            $el.next().next().show('fast');    
-          else
-            $el.next().next().hide('fast');
+          var $changedEl = $(this); // Use a different variable name to avoid confusion with outer $el
+          if ( $changedEl.is(':checked') ) {
+            $changedEl.next().next().show('fast');
+          } else {
+            $changedEl.next().next().hide('fast');
+          }
         });
       }
-    }else{
-      if ($el.hasClass("conditinal_control")){
-      $el.on('change', function() { 
-        var $el = $(this);
-        if($el.is(':checked'))
-          $el.next().show('fast');    
-        else
-          $el.next().hide('fast');
+    } else {
+      if ( $el.hasClass('conditinal_control') ) {
+        $el.on('change', function() {
+          var $changedEl = $(this);
+          if ( $changedEl.is(':checked') ) {
+            $changedEl.next().show('fast');
+          } else {
+            $changedEl.next().hide('fast');
+          }
         });
       }
     }
@@ -252,12 +259,13 @@ function fancyCheckbox(){
  * @since 1.1.5
  */
  //by_FloatedAds to fix "what if there weren't any select box" bug!
-if ($("select").length){
+if ( $("select").length > 0 ){ // Check if any select element exists
   fancySelect();
-  function fancySelect(){
-    $("select").each(function (){
-      if(! $(this).hasClass('no-fancy'))
+  function fancySelect() {
+    $("select").each(function() {
+      if ( ! $(this).hasClass('no-fancy') ) {
         $(this).select2();
+      }
     });
   }
 }
@@ -292,10 +300,10 @@ function remove_image(ele){
 function image_upload(ele){
   var $el = $(ele);
   formfield1 = $el.prev();
-  formfield2 = $el.prev().prev();      
-  if ($el.attr('data-u') == 'tk'){
-    tb_show('', 'media-upload.php?post_id=0&type=image&apc=apc&TB_iframe=true');
-    //store old send to editor function
+  formfield2 = $el.prev().prev();
+  if ( $el.attr('data-u') === 'tk' ){ // Thickbox uploader (older WP)
+    tb_show('', 'media-upload.php?post_id=0&type=image&apc=apc&TB_iframe=true'); // Consider making 'apc=apc' more descriptive if it's a custom query var
+    // Store old send to editor function
     window.restore_send_to_editor = window.send_to_editor;
     //overwrite send to editor function
     window.send_to_editor = function(html) {
@@ -324,11 +332,11 @@ function image_upload(ele){
     }
     // Create the media frame.
     file_frame = wp.media.frames.file_frame = wp.media({
-      title: $el.data( 'uploader_title' ),
+      title: $el.data( 'uploader_title' ) || 'Choose Image', // Provide a default title
       button: {
-        text: $el.data( 'uploader_button_text' ),
+        text: $el.data( 'uploader_button_text' ) || 'Use this image', // Provide a default button text
       },
-      multiple: false  // Set to true to allow multiple files to be selected
+      multiple: false  // Set to true to allow multiple files to be selected.
     });
     // When an image is selected, run a callback.
     file_frame.on( 'select', function() {
@@ -446,10 +454,11 @@ function do_ajax_import_export(which){
   var seq_selector = "#apc_" + which + "_nonce";
   var action_selctor = "apc_" + which + "_" + group;
   jQuery.ajaxSetup({ cache: false });
-  if (which == 'export')
-    export_ajax_call(action_selctor,group,seq_selector,which);
-  else
-    import_ajax_call(action_selctor,group,seq_selector,which);
+  if (which === 'export') { // Strict comparison
+    export_ajax_call(action_selctor, group, seq_selector, which);
+  } else {
+    import_ajax_call(action_selctor, group, seq_selector, which);
+  }
   jQuery.ajaxSetup({ cache: true });
 }
 
@@ -476,8 +485,8 @@ function export_ajax_call(action,group,seq_selector,which){
     function(data) {
       if (data){
         export_response(data);
-      }else{
-        alert("Something Went Wrong, try again later");
+      } else {
+        alert("Something Went Wrong, try again later"); // Note: Should be internationalized
       }
       after_ajax_import_export(which);
     }
@@ -508,8 +517,8 @@ function import_ajax_call(action,group,seq_selector,which){
     function(data) {
       if (data){
          import_response(data);
-      }else{
-        alert("Something Went Wrong, try again later");
+      } else {
+        alert("Something Went Wrong, try again later"); // Note: Should be internationalized
       }
       after_ajax_import_export(which);
     },
@@ -531,10 +540,11 @@ function before_ajax_import_export(which){
   jQuery(".export_status").hide("fast");
   jQuery(".export_results").html('').removeClass('alert-success').hide();
   jQuery(".import_results").html('').removeClass('alert-success').hide();
-  if (which == 'import')
+  if (which === 'import') { // Strict comparison
     jQuery(".import_status").show("fast");
-  else
+  } else {
     jQuery(".export_status").show("fast");
+  }
 }
 
 /**
@@ -547,10 +557,11 @@ function before_ajax_import_export(which){
  * @return void
  */
 function after_ajax_import_export(which){
-  if (which == 'import')
+  if (which === 'import') { // Strict comparison
     jQuery(".import_status").hide("fast");
-  else
+  } else {
     jQuery(".export_status").hide("fast");
+  }
 }
 
 /**
@@ -645,167 +656,73 @@ function bindOn(event,selector,func){
  * Loading the measure tool in colorbox
  */
 jQuery(document).ready(function(){
-  jQuery(".measure_url").colorbox({iframe:true, width:"95%", height:"95%"});
-});
+  jQuery(".measure_url").colorbox({ iframe:true, width:"95%", height:"95%" });
 
-/**
- * Hiding conditional tags
- */
-jQuery(document).ready(function() {
+  /**
+   * Hiding conditional tags - This section appears to be custom logic from the BF_Admin_Page_Class
+   * to handle its specific conditional field display.
+   * Standardizing formatting and selectors for clarity.
+   */
+  function initializeConditionalBannerState(bannerType) {
+    var imageStateDiv = $('div[rel="' + bannerType + '_banner_image_state"]');
+    var codeStateDiv = $('div[rel="' + bannerType + '_banner_code_state"]');
 
-  //left banner
-  if (jQuery('div[rel="left_banner_image_state"]').hasClass("on")) {
-      jQuery('div[rel="left_banner_image_state"]').addClass('green');
-  }
-  else if (jQuery('div[rel="left_banner_image_state"]').hasClass("off")) {
-      jQuery('div[rel="left_banner_image_state"]').addClass('grey');
-  }
-  if (jQuery('div[rel="left_banner_code_state"]').hasClass("on")) {
-      jQuery('div[rel="left_banner_code_state"]').addClass('green');
-  }
-  else if (jQuery('div[rel="left_banner_code_state"]').hasClass("off")) {
-      jQuery('div[rel="left_banner_code_state"]').addClass('grey');
-  }
-  //right banner
-  if (jQuery('div[rel="right_banner_image_state"]').hasClass("on")) {
-      jQuery('div[rel="right_banner_image_state"]').addClass('green');
-  }
-  else if (jQuery('div[rel="right_banner_image_state"]').hasClass("off")) {
-      jQuery('div[rel="right_banner_image_state"]').addClass('grey');
-  }
-  if (jQuery('div[rel="right_banner_code_state"]').hasClass("on")) {
-      jQuery('div[rel="right_banner_code_state"]').addClass('green');
-  }
-  else if (jQuery('div[rel="right_banner_code_state"]').hasClass("off")) {
-      jQuery('div[rel="right_banner_code_state"]').addClass('grey');
-  }
-  //mobile banner
-  if (jQuery('div[rel="mobile_banner_image_state"]').hasClass("on")) {
-      jQuery('div[rel="mobile_banner_image_state"]').addClass('green');
-  }
-  else if (jQuery('div[rel="mobile_banner_image_state"]').hasClass("off")) {
-      jQuery('div[rel="mobile_banner_image_state"]').addClass('grey');
-  }
-  if (jQuery('div[rel="mobile_banner_code_state"]').hasClass("on")) {
-      jQuery('div[rel="mobile_banner_code_state"]').addClass('green');
-  }
-  else if (jQuery('div[rel="mobile_banner_code_state"]').hasClass("off")) {
-      jQuery('div[rel="mobile_banner_code_state"]').addClass('grey');
-  }
-  jQuery('div[rel="left_banner_image_state"]').on('click',function(){
-      if (jQuery(this).hasClass("green")) {        
-          jQuery(this).removeClass('green');
-          jQuery(this).addClass('grey');
-          jQuery(this).next().hide();
-          jQuery('input[id="left_banner_image_state"]').attr("name", "left_banner_image_state");
-      }
-      else if (jQuery(this).hasClass("grey")) {
-          jQuery(this).removeClass('grey');
-          jQuery(this).addClass('green');
-          jQuery(this).next().show();
-          jQuery('input[id="left_banner_image_state"]').attr("name", "left_banner_image_state[enabled]");
+    if (imageStateDiv.hasClass("on")) {
+        imageStateDiv.addClass('green');
+    } else if (imageStateDiv.hasClass("off")) {
+        imageStateDiv.addClass('grey');
+    }
 
-          jQuery('div[rel="left_banner_code_state"]').removeClass('green');
-          jQuery('div[rel="left_banner_code_state"]').addClass('grey');
-          jQuery('div[rel="left_banner_code_state"]').next().hide();
-          jQuery('input[id="left_banner_code_state"]').attr("name", "left_banner_code_state");
-      }
-  });
-  jQuery('div[rel="left_banner_code_state"]').on('click',function(){
-      if (jQuery(this).hasClass("green")) {
-          jQuery(this).removeClass('green');
-          jQuery(this).addClass('grey');
-          jQuery(this).next().hide();
-          jQuery('input[id="left_banner_code_state"]').attr("name", "left_banner_code_state");          
-      }
-      else if (jQuery(this).hasClass("grey")) {
-          jQuery(this).removeClass('grey');
-          jQuery(this).addClass('green');
-          jQuery(this).next().show();
-          jQuery('input[id="left_banner_code_state"]').attr("name", "left_banner_code_state[enabled]");
-          
-          jQuery('div[rel="left_banner_image_state"]').removeClass('green');
-          jQuery('div[rel="left_banner_image_state"]').addClass('grey');
-          jQuery('div[rel="left_banner_image_state"]').next().hide();
-          jQuery('input[id="left_banner_image_state"]').attr("name", "left_banner_image_state");
-      }
-  });
-//right banner
-  jQuery('div[rel="right_banner_image_state"]').on('click',function(){
-      if (jQuery(this).hasClass("green")) {        
-          jQuery(this).removeClass('green');
-          jQuery(this).addClass('grey');
-          jQuery(this).next().hide();
-          jQuery('input[id="right_banner_image_state"]').attr("name", "right_banner_image_state");
-      }
-      else if (jQuery(this).hasClass("grey")) {
-          jQuery(this).removeClass('grey');
-          jQuery(this).addClass('green');
-          jQuery(this).next().show();
-          jQuery('input[id="right_banner_image_state"]').attr("name", "right_banner_image_state[enabled]");
+    if (codeStateDiv.hasClass("on")) {
+        codeStateDiv.addClass('green');
+    } else if (codeStateDiv.hasClass("off")) {
+        codeStateDiv.addClass('grey');
+    }
+  }
 
-          jQuery('div[rel="right_banner_code_state"]').removeClass('green');
-          jQuery('div[rel="right_banner_code_state"]').addClass('grey');
-          jQuery('div[rel="right_banner_code_state"]').next().hide();
-          jQuery('input[id="right_banner_code_state"]').attr("name", "right_banner_code_state");
-      }
-  });
-  jQuery('div[rel="right_banner_code_state"]').on('click',function(){
-      if (jQuery(this).hasClass("green")) {
-          jQuery(this).removeClass('green');
-          jQuery(this).addClass('grey');
-          jQuery(this).next().hide();
-          jQuery('input[id="right_banner_code_state"]').attr("name", "right_banner_code_state");          
-      }
-      else if (jQuery(this).hasClass("grey")) {
-          jQuery(this).removeClass('grey');
-          jQuery(this).addClass('green');
-          jQuery(this).next().show();
-          jQuery('input[id="right_banner_code_state"]').attr("name", "right_banner_code_state[enabled]");
-          
-          jQuery('div[rel="right_banner_image_state"]').removeClass('green');
-          jQuery('div[rel="right_banner_image_state"]').addClass('grey');
-          jQuery('div[rel="right_banner_image_state"]').next().hide();
-          jQuery('input[id="right_banner_image_state"]').attr("name", "right_banner_image_state");
-      }
-  });
-//mobile banner
-  jQuery('div[rel="mobile_banner_image_state"]').on('click',function(){
-      if (jQuery(this).hasClass("green")) {        
-          jQuery(this).removeClass('green');
-          jQuery(this).addClass('grey');
-          jQuery(this).next().hide();
-          jQuery('input[id="mobile_banner_image_state"]').attr("name", "mobile_banner_image_state");
-      }
-      else if (jQuery(this).hasClass("grey")) {
-          jQuery(this).removeClass('grey');
-          jQuery(this).addClass('green');
-          jQuery(this).next().show();
-          jQuery('input[id="mobile_banner_image_state"]').attr("name", "mobile_banner_image_state[enabled]");
+  function setupConditionalBannerControls(bannerType) {
+    var imageStateDiv = $('div[rel="' + bannerType + '_banner_image_state"]');
+    var codeStateDiv = $('div[rel="' + bannerType + '_banner_code_state"]');
+    var imageInput = $('input[id="' + bannerType + '_banner_image_state"]');
+    var codeInput = $('input[id="' + bannerType + '_banner_code_state"]');
 
-          jQuery('div[rel="mobile_banner_code_state"]').removeClass('green');
-          jQuery('div[rel="mobile_banner_code_state"]').addClass('grey');
-          jQuery('div[rel="mobile_banner_code_state"]').next().hide();
-          jQuery('input[id="mobile_banner_code_state"]').attr("name", "mobile_banner_code_state");
+    imageStateDiv.on('click', function() {
+      var $this = $(this);
+      if ( $this.hasClass("green") ) {
+        $this.removeClass('green').addClass('grey');
+        $this.next().hide();
+        imageInput.attr("name", bannerType + "_banner_image_state");
+      } else if ( $this.hasClass("grey") ) {
+        $this.removeClass('grey').addClass('green');
+        $this.next().show();
+        imageInput.attr("name", bannerType + "_banner_image_state[enabled]");
+
+        codeStateDiv.removeClass('green').addClass('grey');
+        codeStateDiv.next().hide();
+        codeInput.attr("name", bannerType + "_banner_code_state");
       }
-  });
-  jQuery('div[rel="mobile_banner_code_state"]').on('click',function(){
-      if (jQuery(this).hasClass("green")) {
-          jQuery(this).removeClass('green');
-          jQuery(this).addClass('grey');
-          jQuery(this).next().hide();
-          jQuery('input[id="mobile_banner_code_state"]').attr("name", "mobile_banner_code_state");          
+    });
+
+    codeStateDiv.on('click', function() {
+      var $this = $(this);
+      if ( $this.hasClass("green") ) {
+        $this.removeClass('green').addClass('grey');
+        $this.next().hide();
+        codeInput.attr("name", bannerType + "_banner_code_state");
+      } else if ( $this.hasClass("grey") ) {
+        $this.removeClass('grey').addClass('green');
+        $this.next().show();
+        codeInput.attr("name", bannerType + "_banner_code_state[enabled]");
+
+        imageStateDiv.removeClass('green').addClass('grey');
+        imageStateDiv.next().hide();
+        imageInput.attr("name", bannerType + "_banner_image_state");
       }
-      else if (jQuery(this).hasClass("grey")) {
-          jQuery(this).removeClass('grey');
-          jQuery(this).addClass('green');
-          jQuery(this).next().show();
-          jQuery('input[id="mobile_banner_code_state"]').attr("name", "mobile_banner_code_state[enabled]");
-          
-          jQuery('div[rel="mobile_banner_image_state"]').removeClass('green');
-          jQuery('div[rel="mobile_banner_image_state"]').addClass('grey');
-          jQuery('div[rel="mobile_banner_image_state"]').next().hide();
-          jQuery('input[id="mobile_banner_image_state"]').attr("name", "mobile_banner_image_state");
-      }
+    });
+  }
+
+  ['left', 'right', 'mobile'].forEach(function(bannerType) {
+    initializeConditionalBannerState(bannerType);
+    setupConditionalBannerControls(bannerType);
   });
 });

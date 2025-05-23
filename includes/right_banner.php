@@ -1,69 +1,44 @@
 <?php
-	//declaring variables from the ajax call into this file
-	if (isset($_POST["clientwidth_php"])) {
-		$clientwidth_php = $_POST['clientwidth_php'];
-	}
-	if (isset($_POST["screen_w"])) {
-		$screen_w = $_POST['screen_w']; 
-	}
-	if (isset($_POST["right_banner_is_on"])) {
-		$right_banner_is_on = $_POST['right_banner_is_on']; 
-	} else {
-		$right_banner_is_on = 0;
-	}
-	if (isset($_POST["right_banner_is_image"])) {
-		$right_banner_is_image = $_POST['right_banner_is_image']; 
-	} else {
-		$right_banner_is_image = 0;
-	}
-	if (isset($_POST["right_banner_is_code"])) { 
-		$right_banner_is_code = $_POST['right_banner_is_code']; 
-	} else {
-		$right_banner_is_code = 0;
-	}
-	if (isset($_POST["RightBannerW"])) { 
-		$RightBannerW = $_POST['RightBannerW']; 
-	}
-	if (isset($_POST["RightBannerH"])) { 
-		$RightBannerH = $_POST['RightBannerH']; 
-	}
-	if (isset($_POST["right_banner_link"])) { 
-		$right_banner_link = $_POST['right_banner_link']; 
-	}
-	if (isset($_POST["right_banner_url"])) { 
-		$right_banner_url = $_POST['right_banner_url']; 
-	}
-	if (isset($_POST["right_banner_custom"])) { 
-		$right_banner_custom = $_POST['right_banner_custom']; 
-	}
-	if (isset($_POST["right_banner_sticky_php"])) { 
-		$right_banner_sticky_php = $_POST['right_banner_sticky_php']; 
-	}
+/**
+ * Template for displaying the Right Banner.
+ *
+ * This template is included via AJAX and relies on several variables
+ * being defined and sanitized in the calling AJAX handler function
+ * (`floated_ads_handle_right_banner` in `floated_banners.php`).
+ *
+ * Expected variables:
+ * - $right_banner_is_on (int): Whether the right banner is active (1 or 0).
+ * - $right_banner_is_image (int): Whether the banner is an image (1 or 0).
+ * - $right_banner_is_code (int): Whether the banner is custom code (1 or 0).
+ * - $RightBannerW (int): Width of the banner.
+ * - $RightBannerH (int): Height of the banner.
+ * - $right_banner_link (string): URL for the banner image link.
+ * - $right_banner_url (string): URL for the banner image source.
+ * - $right_banner_custom (string): Custom HTML/JS code for the banner (pre-sanitized).
+ *
+ * @package FloatedAds
+ * @since 2.0.0
+ */
 
-	//check if current window size is greater than minimum window size
-	if($clientwidth_php >= $screen_w){
-		//check if the right banner is on and set to image
-		if ($right_banner_is_on == 1 && $right_banner_is_image == 1){
-			echo "<div id=\"divAdRight\" style=\"position: absolute; top: 0px; width:",$RightBannerW,"px;height:",$RightBannerH,"px;overflow:hidden;\"><a href=\"",isset($right_banner_link) ? $right_banner_link : '',"\"><img src=\"",isset($right_banner_url) ? $right_banner_url : '',"\" /></a></div>";
-		}
-		//check if the right banner is on and set to code
-		elseif ($right_banner_is_on == 1 && $right_banner_is_code == 1){
-			echo "<div id=\"divAdRight\" style=\"position: absolute; top: 0px; width:",$RightBannerW,"px;height:",$RightBannerH,"px;overflow:hidden;\">",htmlspecialchars_decode(stripslashes($right_banner_custom)),"</div>";
-		}		            
-	}
-	//in case the current window size is less than minimum window size, show empty div
-	else {
-		echo '<div id="divAdRight"></div>';
-	}
+if ( ! defined( 'WPINC' ) ) {
+	die;
+}
 
-	//check if the left banner is set to sticky
-	if($right_banner_sticky_php == 1){
-	?>
-		<script>		
-		jQuery(document).ready(function() {
-      jQuery("#divAdRight").addClass("fixed_float");
-		});
-		</script>
-	<?php
-	}
+if ( 1 === $right_banner_is_on && 1 === $right_banner_is_image && ! empty( $right_banner_url ) ) {
+	$style = 'position: absolute; top: 0px; width:' . absint( $RightBannerW ) . 'px;height:' . absint( $RightBannerH ) . 'px;overflow:hidden;';
+	echo '<div id="divAdRight" style="' . esc_attr( $style ) . '">';
+	echo '<a href="' . esc_url( $right_banner_link ) . '"><img src="' . esc_url( $right_banner_url ) . '" alt="' . esc_attr__( 'Right Banner Ad', 'apc' ) . '" /></a>';
+	echo '</div>';
+} elseif ( 1 === $right_banner_is_on && 1 === $right_banner_is_code && ! empty( $right_banner_custom ) ) {
+	$style = 'position: absolute; top: 0px; width:' . absint( $RightBannerW ) . 'px;height:' . absint( $RightBannerH ) . 'px;overflow:hidden;';
+	echo '<div id="divAdRight" style="' . esc_attr( $style ) . '">';
+	// $right_banner_custom is pre-sanitized with wp_kses_post in the AJAX handler.
+	echo $right_banner_custom;
+	echo '</div>';
+} else {
+	echo '<div id="divAdRight"></div>';
+}
+
+// The JavaScript for adding 'fixed_float' class is removed from here.
+// This class will be added by the main FloatedAds.js if $right_banner_sticky_php (from floatedAdsGlobalData) is true.
 ?>

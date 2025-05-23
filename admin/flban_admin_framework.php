@@ -61,9 +61,10 @@ if ( ! class_exists( 'BF_Admin_Page_Class') ) :
     protected $args;
       
     /**
-     * Contains Options group name
+     * Contains Options group name.
+     * 
      * @access protected
-     * @var array
+     * @var string The option group name.
      * @since 0.1
      */
     protected $option_group;
@@ -114,10 +115,10 @@ if ( ! class_exists( 'BF_Admin_Page_Class') ) :
     public $_Slug;
     
     /**
-     * Contains all the information needed to build the Help tabs
+     * Contains all the information needed to build the Help tabs.
      * 
      * @access public
-     * @var array
+     * @var array Array of help tab arguments.
      * @since 0.1
      */
     public $_help_tabs;
@@ -176,10 +177,29 @@ if ( ! class_exists( 'BF_Admin_Page_Class') ) :
      * @since
      */
     public $data_type = 'options';
+
     /**
-     * Builds a new Page 
-     * @param $args (string|mixed array) - 
+     * Constructor. Builds a new Page.
+     * 
+     * @param array|string $args {
+     *     Configuration arguments for the admin page.
      *
+     *     @type array|string $menu         Menu configuration. If string, parent slug. If array, top-level menu settings.
+     *     @type string       $page_title   Title of the page.
+     *     @type string       $capability   (Optional) Capability required to view the page. Default 'edit_themes'.
+     *     @type string       $menu_title   (Optional) Title for top-level menu.
+     *     @type string       $menu_slug    (Optional) Slug for top-level menu.
+     *     @type string       $icon_url     (Optional) URL for top-level menu icon.
+     *     @type int          $position     (Optional) Position for top-level menu.
+     *     @type string       $option_group Required. The option group name for settings.
+     *     @type array        $fields       Array of field definitions.
+     *     @type bool         $local_images (Optional) Whether to use local images. Default false.
+     *     @type bool         $use_with_theme (Optional) Path configuration if used with a theme. Default false.
+     *     @type bool         $google_fonts (Optional) Whether to enable Google Fonts for typography fields. Default false.
+     * }
+     * @since 0.1
+     */
+    public function __construct($args) {
      * Possible keys within $args:
      *  > menu (array|string) - (string) -> this the name of the parent Top-Level-Menu or a TopPage object to create 
      *                      this page as a sub menu to.
@@ -195,41 +215,41 @@ if ( ! class_exists( 'BF_Admin_Page_Class') ) :
      *
      */
     public function __construct($args) {
-      if(is_array($args)) {
-        if (isset($args['option_group'])){
+      if ( is_array( $args ) ) {
+        if ( isset( $args['option_group'] ) ) {
           $this->option_group = $args['option_group'];
         }
         $this->args = $args;
       } else {
-        $array['page_title'] = $args;
-        $this->args = $array;
+        // If $args is a string, assume it's the page title.
+        $this->args = array( 'page_title' => $args );
       }
 
-      //add hooks for export download
-      add_action('template_redirect',array($this, 'admin_redirect_download_files'));
-      add_filter('init', array($this,'add_query_var_vars'));
+      // Add hooks for export download.
+      add_action( 'template_redirect', array( $this, 'admin_redirect_download_files' ) );
+      add_filter( 'init', array( $this, 'add_query_var_vars' ) );
       
       // If we are not in admin area exit.
-      if ( ! is_admin() )
+      if ( ! is_admin() ) {
         return;
+      }
 
-      //load translation
+      // Load translation.
       $this->load_textdomain();
 
-      //set defaults
-      $this->_div_or_row = true;
-      $this->saved = false;
-      //store args
-      $this->args = $args;
-      //google_fonts
-      $this->google_fonts = isset($args['google_fonts'])? true : false;
+      // Set defaults.
+      $this->_div_or_row = true; // Default to using table rows for fields.
+      // $this->saved = false; // This property is not consistently used or initialized. Consider removing or standardizing.
+      
+      // Google Fonts.
+      $this->google_fonts = isset( $this->args['google_fonts'] ) ? true : false;
 
-      //sub $menu
-      if(!is_array($args['menu'])) {
-        if(is_object($args['menu'])) {
-          $this->Top_Slug = $args['menu']->Top_Slug;
-        }else{
-          switch($args['menu']) {
+      // Sub $menu.
+      if ( ! is_array( $this->args['menu'] ) ) {
+        if ( is_object( $this->args['menu'] ) ) {
+          $this->Top_Slug = $this->args['menu']->Top_Slug;
+        } else {
+          switch ( $this->args['menu'] ) {
             case 'posts':
               $this->Top_Slug = 'edit.php';
               break;
@@ -239,7 +259,7 @@ if ( ! class_exists( 'BF_Admin_Page_Class') ) :
             case 'media':
               $this->Top_Slug = 'upload.php';
               break;
-            case 'links':
+            case 'links': // Link Manager was removed in WP 3.5.
               $this->Top_Slug = 'link-manager.php';
               break;
             case 'pages':
@@ -264,46 +284,46 @@ if ( ! class_exists( 'BF_Admin_Page_Class') ) :
               $this->Top_Slug = 'options-general.php';
               break;        
             default:
-              if(post_type_exists($args['menu'])) {
-                $this->Top_Slug = 'edit.php?post_type='.$args['menu'];
+              if ( post_type_exists( $this->args['menu'] ) ) {
+                $this->Top_Slug = 'edit.php?post_type=' . $this->args['menu'];
               } else {
-                $this->Top_Slug = $args['menu'];
+                $this->Top_Slug = $this->args['menu'];
               }
           }
         }
-        add_action('admin_menu', array($this, 'AddMenuSubPage'));
-      }else{
-        //top page
-        $this->Top_Slug = $args['menu']['top'];
-        add_action('admin_menu', array($this, 'AddMenuTopPage'));
+        add_action( 'admin_menu', array( $this, 'AddMenuSubPage' ) );
+      } else {
+        // Top page.
+        $this->Top_Slug = $this->args['menu']['top'];
+        add_action( 'admin_menu', array( $this, 'AddMenuTopPage' ) );
       }
       
+      // Assign page values to local variables and add its missed values.
+      $this->_Page_Config  = $this->args; // Redundant? $this->args is already set.
+      $this->_fields       = isset( $this->_Page_Config['fields'] ) ? $this->_Page_Config['fields'] : array();
+      $this->_Local_images = isset( $this->args['local_images'] ) ? true : false;
+      $this->_div_or_row   = isset( $this->args['div_or_row'] ) ? $this->args['div_or_row'] : false; // Default was true, now false if not set.
+      
+      $this->add_missed_values(); // Ensure fields have default values.
 
-      // Assign page values to local variables and add it's missed values.
-      //by_FloatedAds change the folder name to admin instead of admin-class-page
-      $this->_Page_Config = $args;
-      $this->_fields = $this->_Page_Config['fields'];
-      $this->_Local_images = (isset($args['local_images'])) ? true : false;
-      $this->_div_or_row = (isset($args['div_or_row'])) ? $args['div_or_row'] : false;
-      $this->add_missed_values();
-      if (isset($args['use_with_theme'])){
-        if ($args['use_with_theme'] === true){
+      if ( isset( $this->args['use_with_theme'] ) ) {
+        if ( true === $this->args['use_with_theme'] ) {
           $this->SelfPath = get_stylesheet_directory_uri() . '/admin';
-        }elseif($args['use_with_theme'] === false){
+        } elseif ( false === $this->args['use_with_theme'] ) {
           $this->SelfPath = plugins_url( 'admin', plugin_basename( dirname( __FILE__ ) ) );
-        }else{
-          $this->SelfPath = $args['use_with_theme'];
+        } else {
+          $this->SelfPath = $this->args['use_with_theme'];
         }
-      }else{
+      } else {
         $this->SelfPath = plugins_url( 'admin', plugin_basename( dirname( __FILE__ ) ) );
       }
 
-      // Load common js, css files
+      // Load common js, css files.
       // Must enqueue for all pages as we need js for the media upload, too.
       
       
       //add_action('admin_head', array($this, 'loadScripts'));
-      add_filter('attribute_escape',array($this,'edit_insert_to_post_text'),10,2);
+      // add_filter('attribute_escape',array($this,'edit_insert_to_post_text'),10,2); // Deprecated
 
       // Delete file via Ajax
       add_action( 'wp_ajax_apc_delete_mupload', array( $this, 'wp_ajax_delete_image' ) );
@@ -626,25 +646,6 @@ if ( ! class_exists( 'BF_Admin_Page_Class') ) :
     
     
     
-    //rename insert to post button
-    /**
-     * edit_insert_to_post_text 
-     * 
-     * @author  ohad raz
-     * @since 0.1
-     * @param  string $input insert to post text
-     * @return string
-     */
-    public function edit_insert_to_post_text( $safe_text, $text ) {
-      if( is_admin() && 'Insert into Post' == $safe_text){
-        if (isset($_REQUEST['apc']) && 'insert_file' == $_REQUEST['apc'] )
-          return str_replace(__('Insert into Post'), __('Use this File','apc'), $safe_text);
-        else
-          return str_replace(__('Insert into Post'), __('Use this Image','apc'), $safe_text);
-      }
-      return $safe_text;
-    }
-
     /* print out panel Style (deprecated)
      * 
      * @access public
@@ -685,7 +686,7 @@ if ( ! class_exists( 'BF_Admin_Page_Class') ) :
           $this->errors_flag = true;
           $this->displayErrors();
         }else{
-          echo '<div class="alert alert-success"><button data-dismiss="alert" class="close" type="button">×</button><strong>'.__('Settings saved.','apc').'</strong></div>'."\n";
+          echo '<div id="message" class="notice notice-success is-dismissible"><p><strong>'.__('Settings saved.','apc').'</strong></p></div>'."\n";
         }
         echo '</div>'."\n";
       }
@@ -2222,6 +2223,17 @@ if ( ! class_exists( 'BF_Admin_Page_Class') ) :
         $type = $field['type'];
         $old = isset($saved[$name])? $saved[$name]: NULL;
         $new = ( isset( $_POST[$name] ) ) ? $_POST[$name] : ( ( isset($field['multiple']) && $field['multiple']) ? array() : '' );
+        
+        // General sanitization based on type before specific save_field_* methods
+        if (is_string($new)) {
+            if ($type === 'text') {
+                $new = sanitize_text_field($new);
+            } elseif ($type === 'textarea' && !isset($field['allow_html'])) { // Assuming 'allow_html' is a custom flag for textareas that need wp_kses_post
+                $new = sanitize_textarea_field($new);
+            } elseif ($type === 'textarea' && isset($field['allow_html'])) {
+                $new = wp_kses_post($new); // For textareas that expect HTML (like custom code)
+            }
+        }
               
 
         //Validate and senitize meta value
@@ -2263,14 +2275,33 @@ if ( ! class_exists( 'BF_Admin_Page_Class') ) :
   public function save_field( $field, $old, $new ) {
     $name = $field['id'];
     unset($this->_saved[$name]);
-    if ( $new === '' || $new === array() && ( !in_array($field['type'],array('text','textarea')) ) ) 
+    
+    // If $new is an empty string or an empty array, and the field type is not explicitly text or textarea,
+    // it might be intentional (e.g., clearing a selection or a checkbox).
+    // However, for text/textarea, an empty string is a valid value to save.
+    if ( ($new === '' || $new === array()) && !in_array($field['type'], array('text','textarea','code','wysiwyg')) ) { // Added code and wysiwyg as they can be empty
       return;
+    }
+
     if ( isset($field['multiple'] ) && $field['multiple'] && $field['type'] != 'plupload') {
-      foreach ( $new as $add_new ) {
-        $temp[] = $add_new;
+      if (is_array($new)) {
+        $temp = array();
+        foreach ( $new as $add_new ) {
+            // Further sanitize array elements if needed, based on expected content type
+            if (is_string($add_new)) {
+                $temp[] = sanitize_text_field($add_new); // Default sanitization for array string values
+            } else {
+                $temp[] = $add_new; // Non-string values (could be arrays for complex fields)
+            }
+        }
+        $this->_saved[$name] = $temp;
+      } else {
+        // If multiple is expected but $new is not an array, treat as empty or invalid.
+        // This case should ideally not happen if form submission is correct.
       }
-      $this->_saved[$name] = $temp;
     } else {
+      // For non-multiple fields, $new should already be sanitized by the main save() loop
+      // or by specific save_field_* methods.
       $this->_saved[$name] = $new;
     }
   }
@@ -2287,8 +2318,12 @@ if ( ! class_exists( 'BF_Admin_Page_Class') ) :
   public function save_field_image(  $field, $old, $new ) {
     $name = $field['id'];
     unset($this->_saved[$name]);
-    if ( $new === '' || $new === array() || $new['id'] == '' || $new['src'] == '') 
+    if ( !is_array($new) || empty($new['id']) || empty($new['src']) ) { // Check if it's an array and has id & src
       return;
+    }
+    
+    $new['id'] = absint($new['id']);
+    $new['src'] = esc_url_raw($new['src']);
     
     $this->_saved[$name] = $new;
   }
@@ -2303,7 +2338,8 @@ if ( ! class_exists( 'BF_Admin_Page_Class') ) :
    * @access public 
    */
   public function save_field_wysiwyg(  $field, $old, $new ) {
-    $this->save_field(  $field, $old, htmlentities($new) );
+    // Allow only safe HTML, as configured by WordPress default KSES rules for posts.
+    $this->save_field(  $field, $old, wp_kses_post($new) );
   }
   
   /*
@@ -2333,33 +2369,98 @@ if ( ! class_exists( 'BF_Admin_Page_Class') ) :
    */
   public function save_field_repeater( $field, $old, $new ) {
     if (is_array($new) && count($new) > 0){
-      foreach ($new as $n){
-        foreach ( $field['fields'] as $f ) {
-          $type = $f['type'];
-          switch($type) {
-            case 'wysiwyg':
-                $n[$f['id']] = wpautop( $n[$f['id']] ); 
-                break;
-              case 'file':
-                $n[$f['id']] = $this->save_field_file_repeater($f,'',$n[$f['id']]);
-                break;
-              default:
-                   break;
-          }
+      $sanitized_new_array = array(); // Changed variable name to avoid confusion
+      foreach ($new as $index => $item_data){
+        $sanitized_item_data = array();
+        if (is_array($item_data)) {
+            foreach ( $field['fields'] as $sub_field ) { // Iterate over the defined sub-fields
+                $sub_field_id_original = $sub_field['id']; // Original ID used in definition
+                // The actual key in $item_data might not have the repeater prefix,
+                // as $_POST data is already structured.
+                // We need to find the actual key in $item_data that corresponds to $sub_field_id_original.
+                // This part is tricky because the $sub_field['id'] in the definition is often simple (e.g., 'my_text'),
+                // but the $_POST key might be complex due to the repeater structure.
+                // However, $item_data here should be a single repeater item, so keys should be simple.
+                
+                $sub_field_value = isset($item_data[$sub_field_id_original]) ? $item_data[$sub_field_id_original] : null;
+
+                if ($sub_field_value !== null) {
+                    $sub_field_type = $sub_field['type'];
+                    // Apply sanitization based on sub-field type
+                    if (is_string($sub_field_value)) {
+                        switch ($sub_field_type) {
+                            case 'text':
+                                $sanitized_item_data[$sub_field_id_original] = sanitize_text_field($sub_field_value);
+                                break;
+                            case 'textarea':
+                                if (isset($sub_field['allow_html']) && $sub_field['allow_html']) {
+                                    $sanitized_item_data[$sub_field_id_original] = wp_kses_post($sub_field_value);
+                                } else {
+                                    $sanitized_item_data[$sub_field_id_original] = sanitize_textarea_field($sub_field_value);
+                                }
+                                break;
+                            case 'wysiwyg':
+                                $sanitized_item_data[$sub_field_id_original] = wp_kses_post($sub_field_value);
+                                break;
+                            case 'color':
+                                // Validate hex color
+                                if (preg_match('/^#([a-f0-9]{6}|[a-f0-9]{3})$/i', $sub_field_value)) {
+                                    $sanitized_item_data[$sub_field_id_original] = $sub_field_value;
+                                } else {
+                                    $sanitized_item_data[$sub_field_id_original] = ''; // Or a default color
+                                }
+                                break;
+                            case 'select':
+                            case 'radio':
+                                // Assuming options are predefined and safe. Only save if value is a valid key.
+                                if (array_key_exists($sub_field_value, $sub_field['options'])) {
+                                     $sanitized_item_data[$sub_field_id_original] = $sub_field_value;
+                                } else {
+                                     $sanitized_item_data[$sub_field_id_original] = ''; // Or default
+                                }
+                                break;
+                            // Add more cases as necessary for other field types (e.g., email, url, number)
+                            default:
+                                $sanitized_item_data[$sub_field_id_original] = sanitize_text_field($sub_field_value); // Default fallback
+                        }
+                    } elseif (is_array($sub_field_value) && $sub_field_type === 'image') { // Handle image array
+                         if (isset($sub_field_value['id']) && isset($sub_field_value['src'])) {
+                            $sanitized_item_data[$sub_field_id_original]['id'] = absint($sub_field_value['id']);
+                            $sanitized_item_data[$sub_field_id_original]['src'] = esc_url_raw($sub_field_value['src']);
+                        } else {
+                            $sanitized_item_data[$sub_field_id_original] = array('id' => 0, 'src' => '');
+                        }
+                    } elseif (is_array($sub_field_value) && $sub_field_type === 'checkbox_list') {
+                        $temp_array = array();
+                        foreach($sub_field_value as $cb_val) {
+                            if(isset($sub_field['options'][$cb_val])) { // Ensure the value is a valid option
+                                $temp_array[] = sanitize_key($cb_val); // Sanitize the key
+                            }
+                        }
+                        $sanitized_item_data[$sub_field_id_original] = $temp_array;
+                    } else {
+                         // Non-string, non-array (e.g. boolean from checkbox) or already handled complex type
+                        $sanitized_item_data[$sub_field_id_original] = $sub_field_value;
+                    }
+                }
+            }
         }
-        if(!$this->is_array_empty($n))
-          $temp[] = $n;
+        if(!$this->is_array_empty($sanitized_item_data)) {
+            $sanitized_new_array[] = $sanitized_item_data;
+        }
       }
-      if (isset($temp) && count($temp) > 0 && !$this->is_array_empty($temp)){
-        $this->_saved[$field['id']] = $temp;
-      }else{
-        if (isset($this->_saved[$field['id']]))
+      
+      if (count($sanitized_new_array) > 0){
+        $this->_saved[$field['id']] = $sanitized_new_array;
+      } else {
+        if (isset($this->_saved[$field['id']])) {
           unset($this->_saved[$field['id']]);
+        }
       }
-    }else{
-      //  remove old meta if exists
-      if (isset($this->_saved[$field['id']]))
+    } else {
+      if (isset($this->_saved[$field['id']])) {
         unset($this->_saved[$field['id']]);
+      }
     }
   }
   
@@ -3462,15 +3563,18 @@ if ( ! class_exists( 'BF_Admin_Page_Class') ) :
    */
   public function displayErrors(){
     if ($this->errors_flag){
-      echo '<div class="alert alert-error"><button data-dismiss="alert" class="close" type="button">×</button>';
-      echo '<h4>'.__('Errors in saving changes', 'apc').'</h4>';
+      echo '<div class="notice notice-error is-dismissible"><p><strong>'.__('Errors in saving changes', 'apc').'</strong></p>';
+      $error_list = '<ul>';
       foreach ($this->errors as $id => $arr) {
-        echo "<strong>{$arr['name']}</strong>: ";
+        $error_list .= "<li><strong>{$arr['name']}</strong>: ";
+        $messages = array();
         foreach ($arr['m'] as $m) {
-          echo "<br />&nbsp;&nbsp;&nbsp;&nbsp;{$m}";
+          $messages[] = $m;
         }
-        echo '<br />';
+        $error_list .= implode(', ', $messages) . '</li>';
       }
+      $error_list .= '</ul>';
+      echo $error_list;
       echo '</div>';
     }
   }
@@ -3529,8 +3633,8 @@ if ( ! class_exists( 'BF_Admin_Page_Class') ) :
    * @param   string
    * @return  boolean
    * by_FloatedAds, becuase it wasn't working at first place!*/
-  public function is_numeric($val){
-    return (bool)preg_match('/^[-+]?[0-9]*.?[0-9]+$/', $val);
+  public function is_numeric($val, $params = null){ // Added $params to match signature of other is_* methods
+    return is_numeric($val);
   }
 
   /**

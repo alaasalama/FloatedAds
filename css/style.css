@@ -1,35 +1,58 @@
-/*disable links style*/
-    #divAdLeft a[href="#"] {
-        pointer-events: none;
-    }
-    #divAdRight a[href="#"] {
-        pointer-events: none;
-    }
-    .fixed_float {
-        position: fixed!important;
-    }
-/*mobile banner styles*/
-    #bottom_banner {
-        position: fixed;
-        text-align: center;
-        bottom: 0px;
-        width: 100%;
-        z-index: 999;
-    }
-    #bottom_banner img {
-        vertical-align: bottom;
-    }
-    .close-btn {
-        border: 2px solid #FFFFFF;
-        position: relative;
-        padding: 1px 5px;
-        background-color: #605F61;
-        border-radius: 15px;
-    }
-    .close-btn:after {
-        font-size: 15px;
-        content: "X";
-        font-weight: bold;
-        color: white;
-        text-decoration: none;
-    }
+/**
+ * FloatedAds Frontend Styles
+ *
+ * @package FloatedAds
+ * @since 1.0.0
+ */
+
+/* Disable links style for placeholder links */
+#divAdLeft a[href="#"],
+#divAdRight a[href="#"] {
+	pointer-events: none;
+}
+
+.fixed_float {
+	position: fixed !important; /* Overrides inline style if necessary */
+}
+
+/* Mobile banner styles */
+#bottom_banner {
+	position: fixed;
+	bottom: 0; /* Use 0 instead of 0px for zero values */
+	left: 0; /* Ensure it spans full width */
+	width: 100%;
+	text-align: center;
+	z-index: 9999; /* Increased z-index just in case */
+	background-color: transparent; /* Assuming banner itself has background */
+}
+
+#bottom_banner img {
+	vertical-align: bottom;
+	max-width: 100%; /* Ensure image is responsive within banner */
+	height: auto; /* Maintain aspect ratio */
+}
+
+.close-btn {
+	position: absolute; /* Changed from relative to allow precise positioning over the banner */
+	top: -10px;         /* Adjust as needed for visual placement */
+	right: -5px;        /* Adjust as needed for visual placement */
+	padding: 1px 5px;
+	border: 2px solid #ffffff;
+	border-radius: 15px;
+	background-color: #605f61;
+	color: #ffffff;     /* Set color directly on .close-btn */
+	font-size: 15px;    /* Moved from :after */
+	font-weight: bold;  /* Moved from :after */
+	line-height: 1;     /* Ensure consistent height */
+	cursor: pointer;
+	text-decoration: none; /* Ensure no underline from parent links */
+	z-index: 10000;     /* Ensure close button is above banner content */
+}
+
+.close-btn:hover {
+	background-color: #403f41; /* Darken on hover */
+}
+
+.close-btn:after { /* Keep :after for the "X" if preferred, but direct styling is also fine */
+	content: "X";
+}

@@ -1,67 +1,48 @@
 <?php
-  //declaring variables from the ajax call into this file
-  if (isset($_POST["mobile_banner_is_on"])) {
-    $mobile_banner_is_on = $_POST['mobile_banner_is_on'];
-  }
-  if (isset($_POST["mobile_banner_is_image"])) {
-    $mobile_banner_is_image = $_POST['mobile_banner_is_image']; 
-  } else {
-    $mobile_banner_is_image = 0;
-  }
-  if (isset($_POST["mobile_banner_is_code"])) {
-    $mobile_banner_is_code = $_POST['mobile_banner_is_code'];
-  } else {
-    $mobile_banner_is_code = 0;
-  }
-  if (isset($_POST["MobileBannerW"])) {
-    $MobileBannerW = $_POST['MobileBannerW'];
-  }
-  if (isset($_POST["MobileBannerH"])) {
-    $MobileBannerH = $_POST['MobileBannerH'];
-  }
-  if (isset($_POST["mobile_banner_link"])) {
-    $mobile_banner_link = $_POST['mobile_banner_link'];
-  }
-  if (isset($_POST["mobile_banner_url"])) {
-    $mobile_banner_url = $_POST['mobile_banner_url']; 
-  }
-  if (isset($_POST["mobile_banner_custom"])) {
-    $mobile_banner_custom = $_POST['mobile_banner_custom']; 
-  }
+/**
+ * Template for displaying the Mobile Banner.
+ *
+ * This template is included via AJAX and relies on several variables
+ * being defined and sanitized in the calling AJAX handler function
+ * (`floated_ads_handle_mobile_banner` in `floated_banners.php`).
+ *
+ * Expected variables:
+ * - $mobile_banner_is_on (int): Whether the mobile banner is active (1 or 0).
+ * - $mobile_banner_is_image (int): Whether the banner is an image (1 or 0).
+ * - $mobile_banner_is_code (int): Whether the banner is custom code (1 or 0).
+ * - $MobileBannerW (int): Width of the banner.
+ * - $MobileBannerH (int): Height of the banner.
+ * - $mobile_banner_link (string): URL for the banner image link.
+ * - $mobile_banner_url (string): URL for the banner image source.
+ * - $mobile_banner_custom (string): Custom HTML/JS code for the banner (pre-sanitized).
+ *
+ * @package FloatedAds
+ * @since 2.0.0
+ */
 
-  //check if this device is mobile and the mobile banner is set to image
-  if ($mobile_banner_is_on == 1 && $mobile_banner_is_image == 1){
-    echo "<div id=\"bottom_banner\"><span class=\"close-btn\"></span><a href=\"",isset($mobile_banner_link) ? $mobile_banner_link : '',"\"><img src=\"",isset($mobile_banner_url) ? $mobile_banner_url : '',"\" /></a></div>";
-    $margin_left = $MobileBannerW+20;
-    $margin_top = $MobileBannerH*(-1);
-    ?>
-      <script>
-        /*close the mobile image banner*/
-        jQuery('.close-btn').css({'left': '<?php echo $margin_left."px" ;?>', 'top': '<?php echo $margin_top."px" ;?>'});
-        jQuery('.close-btn').click(function(){
-        jQuery('#bottom_banner').fadeOut();
-        });
-        </script>
-    <?php
-  }
+if ( ! defined( 'WPINC' ) ) {
+	die;
+}
 
-  //check if the device is mobile and the mobile banner is set to custom code
-  elseif ($mobile_banner_is_on == 1 && $mobile_banner_is_code == 1){
-    echo "<div id=\"bottom_banner\"><span class=\"close-btn\"></span>",htmlspecialchars_decode(stripslashes($mobile_banner_custom)),"</div>";
-    $margin_left = $MobileBannerW/2;
-    ?>
-      <script>
-        /*close the mobile code banner*/
-        jQuery('.close-btn').css({'left': '<?php echo $margin_left."px" ;?>'});
-        jQuery('.close-btn').click(function(){
-        jQuery('#bottom_banner').fadeOut();
-        });
-      </script>
-    <?php
-  }
+if ( 1 === $mobile_banner_is_on && 1 === $mobile_banner_is_image && ! empty( $mobile_banner_url ) ) {
+	// The style for the banner itself (width/height) would typically be handled by CSS if fixed,
+	// or could be added here if dynamic and necessary beyond what CSS can do.
+	// For now, assuming general CSS handles the banner container's appearance.
+	echo '<div id="bottom_banner">';
+	echo '<span class="close-btn"></span>'; // Close button functionality to be handled by js/FloatedAds.js
+	echo '<a href="' . esc_url( $mobile_banner_link ) . '"><img src="' . esc_url( $mobile_banner_url ) . '" alt="' . esc_attr__( 'Mobile Banner Ad', 'apc' ) . '" style="width:' . absint( $MobileBannerW ) . 'px; height:' . absint( $MobileBannerH ) . 'px;" /></a>';
+	echo '</div>';
+} elseif ( 1 === $mobile_banner_is_on && 1 === $mobile_banner_is_code && ! empty( $mobile_banner_custom ) ) {
+	echo '<div id="bottom_banner" style="width:' . absint( $MobileBannerW ) . 'px; height:' . absint( $MobileBannerH ) . 'px; overflow:auto;">'; // Added overflow:auto for safety with custom code.
+	echo '<span class="close-btn"></span>'; // Close button functionality to be handled by js/FloatedAds.js
+	// $mobile_banner_custom is pre-sanitized with wp_kses_post in the AJAX handler.
+	echo $mobile_banner_custom;
+	echo '</div>';
+} else {
+	// Output an empty div if the banner is not supposed to be shown or is misconfigured.
+	echo '<div id="bottom_banner"></div>';
+}
 
-  //anything else print empty div
-  else {
-    echo '<div id="bottom_banner"></div>';
-  }
+// All JavaScript, including for the close button and its styling, is removed.
+// This functionality will be handled by the main FloatedAds.js file.
 ?>
