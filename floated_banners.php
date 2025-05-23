@@ -493,7 +493,6 @@ add_action( 'init', 'floated_ads_main' );
  * @since 1.0.0 Modified in 2.0.0 to use wp_localize_script.
  */
 function floated_ads_load_script() {
-function floated_ads_load_script() {
 	wp_enqueue_script( 'floatedads-js', plugins_url( '/js/FloatedAds.js', FLADS_PLUGIN_FILE ), array( 'jquery' ), '2.0.0', true ); // Added version, updated handle
 	wp_enqueue_style( 'floatedads-css', plugins_url( '/css/style.css', FLADS_PLUGIN_FILE ), array(), '2.0.0' ); // Added version, updated handle
 
