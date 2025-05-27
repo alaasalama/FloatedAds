@@ -537,7 +537,7 @@ function floated_ads_load_script() {
 	);
 
 	// Left Banner Data.
-	if ( isset( $floated_ads_data['left_banner_active'] ) && '1' === $floated_ads_data['left_banner_active'] ) {
+	if ( ! empty( $floated_ads_data['left_banner_active'] ) ) {
 		$localized_data['left_banner_on'] = 1;
 		if ( isset( $floated_ads_data['left_banner_image_state']['enabled'] ) && ! empty( $floated_ads_data['left_banner_image_state']['left_banner_image']['src'] ) ) {
 			$localized_data['left_banner_is_image_js'] = 1;
@@ -556,7 +556,7 @@ function floated_ads_load_script() {
 	}
 
 	// Right Banner Data.
-	if ( isset( $floated_ads_data['right_banner_active'] ) && '1' === $floated_ads_data['right_banner_active'] ) {
+	if ( ! empty( $floated_ads_data['right_banner_active'] ) ) {
 		$localized_data['right_banner_on'] = 1;
 		if ( isset( $floated_ads_data['right_banner_image_state']['enabled'] ) && ! empty( $floated_ads_data['right_banner_image_state']['right_banner_image']['src'] ) ) {
 			$localized_data['right_banner_is_image_js'] = 1;
@@ -575,7 +575,7 @@ function floated_ads_load_script() {
 	}
 
 	// Mobile Banner Data.
-	if ( isset( $floated_ads_data['show_mobile_banner'] ) && '1' === $floated_ads_data['show_mobile_banner'] ) {
+	if ( ! empty( $floated_ads_data['show_mobile_banner'] ) ) {
 		$localized_data['mobile_banner_on'] = 1;
 		if ( isset( $floated_ads_data['mobile_banner_image_state']['enabled'] ) && ! empty( $floated_ads_data['mobile_banner_image_state']['mobile_banner_image']['src'] ) ) {
 			$localized_data['mobile_banner_is_image'] = 1;
