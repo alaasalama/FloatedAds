@@ -264,7 +264,10 @@ final class FloatedAds {
 	 * @return array
 	 */
 	public function sanitize_options( $input ) {
-		$output = $this->get_default_options();
+		// Start with existing saved options so we don't lose data on partial saves.
+		$existing = get_option( self::OPTION_GROUP, array() );
+		$defaults = $this->get_default_options();
+		$output   = array_merge( $defaults, $existing );
 
 		if ( ! is_array( $input ) ) {
 			return $output;
@@ -295,58 +298,87 @@ final class FloatedAds {
 			$output[ $field ] = ! empty( $input[ $field ] ) ? 1 : 0;
 		}
 
+		/**
+		 * Conditional fields (image_state and code_state) have a hidden <input type="hidden" value="0">
+		 * before the checkbox. If the checkbox is unchecked, only the hidden 0 is submitted and
+		 * the sub-fields (image url, code textarea, etc.) are NOT submitted at all.
+		 *
+		 * We must check that:
+		 *   1. 'enabled' is present AND its value is 'on' (not 0 from the hidden field)
+		 *   2. The sub-field data is actually present in the input before overwriting
+		 */
+
 		// Left banner image state.
-		if ( isset( $input['left_banner_image_state']['enabled'] ) ) {
+		$left_img_enabled = isset( $input['left_banner_image_state']['enabled'] ) && 'on' === $input['left_banner_image_state']['enabled'];
+		if ( $left_img_enabled ) {
 			$output['left_banner_image_state']['enabled'] = 'on';
 			$output['left_banner_image_state']['left_banner_image'] = array(
 				'id'  => isset( $input['left_banner_image_state']['left_banner_image']['id'] ) ? absint( $input['left_banner_image_state']['left_banner_image']['id'] ) : '',
 				'src' => isset( $input['left_banner_image_state']['left_banner_image']['src'] ) ? esc_url_raw( $input['left_banner_image_state']['left_banner_image']['src'] ) : '',
 			);
 			$output['left_banner_image_state']['left_banner_image_link'] = isset( $input['left_banner_image_state']['left_banner_image_link'] ) ? esc_url_raw( $input['left_banner_image_state']['left_banner_image_link'] ) : '#';
+		} elseif ( isset( $input['left_banner_image_state']['enabled'] ) && '0' === $input['left_banner_image_state']['enabled'] ) {
+			// Explicitly disabled – remove the enabled flag but keep nested data intact.
+			unset( $output['left_banner_image_state']['enabled'] );
 		}
 
 		// Left banner code state.
-		if ( isset( $input['left_banner_code_state']['enabled'] ) ) {
+		$left_code_enabled = isset( $input['left_banner_code_state']['enabled'] ) && 'on' === $input['left_banner_code_state']['enabled'];
+		if ( $left_code_enabled ) {
 			$output['left_banner_code_state']['enabled'] = 'on';
-			$output['left_banner_code_state']['left_banner_code'] = isset( $input['left_banner_code_state']['left_banner_code'] ) ? wp_kses_post( $input['left_banner_code_state']['left_banner_code'] ) : '';
+			$output['left_banner_code_state']['left_banner_code'] = isset( $input['left_banner_code_state']['left_banner_code'] ) ? wp_kses_post( stripslashes( $input['left_banner_code_state']['left_banner_code'] ) ) : '';
 			$output['left_banner_code_state']['left_banner_code_width'] = isset( $input['left_banner_code_state']['left_banner_code_width'] ) ? absint( $input['left_banner_code_state']['left_banner_code_width'] ) : 160;
 			$output['left_banner_code_state']['left_banner_code_height'] = isset( $input['left_banner_code_state']['left_banner_code_height'] ) ? absint( $input['left_banner_code_state']['left_banner_code_height'] ) : 600;
+		} elseif ( isset( $input['left_banner_code_state']['enabled'] ) && '0' === $input['left_banner_code_state']['enabled'] ) {
+			unset( $output['left_banner_code_state']['enabled'] );
 		}
 
 		// Right banner image state.
-		if ( isset( $input['right_banner_image_state']['enabled'] ) ) {
+		$right_img_enabled = isset( $input['right_banner_image_state']['enabled'] ) && 'on' === $input['right_banner_image_state']['enabled'];
+		if ( $right_img_enabled ) {
 			$output['right_banner_image_state']['enabled'] = 'on';
 			$output['right_banner_image_state']['right_banner_image'] = array(
 				'id'  => isset( $input['right_banner_image_state']['right_banner_image']['id'] ) ? absint( $input['right_banner_image_state']['right_banner_image']['id'] ) : '',
 				'src' => isset( $input['right_banner_image_state']['right_banner_image']['src'] ) ? esc_url_raw( $input['right_banner_image_state']['right_banner_image']['src'] ) : '',
 			);
 			$output['right_banner_image_state']['right_banner_image_link'] = isset( $input['right_banner_image_state']['right_banner_image_link'] ) ? esc_url_raw( $input['right_banner_image_state']['right_banner_image_link'] ) : '#';
+		} elseif ( isset( $input['right_banner_image_state']['enabled'] ) && '0' === $input['right_banner_image_state']['enabled'] ) {
+			unset( $output['right_banner_image_state']['enabled'] );
 		}
 
 		// Right banner code state.
-		if ( isset( $input['right_banner_code_state']['enabled'] ) ) {
+		$right_code_enabled = isset( $input['right_banner_code_state']['enabled'] ) && 'on' === $input['right_banner_code_state']['enabled'];
+		if ( $right_code_enabled ) {
 			$output['right_banner_code_state']['enabled'] = 'on';
-			$output['right_banner_code_state']['right_banner_code'] = isset( $input['right_banner_code_state']['right_banner_code'] ) ? wp_kses_post( $input['right_banner_code_state']['right_banner_code'] ) : '';
+			$output['right_banner_code_state']['right_banner_code'] = isset( $input['right_banner_code_state']['right_banner_code'] ) ? wp_kses_post( stripslashes( $input['right_banner_code_state']['right_banner_code'] ) ) : '';
 			$output['right_banner_code_state']['right_banner_code_width'] = isset( $input['right_banner_code_state']['right_banner_code_width'] ) ? absint( $input['right_banner_code_state']['right_banner_code_width'] ) : 160;
 			$output['right_banner_code_state']['right_banner_code_height'] = isset( $input['right_banner_code_state']['right_banner_code_height'] ) ? absint( $input['right_banner_code_state']['right_banner_code_height'] ) : 600;
+		} elseif ( isset( $input['right_banner_code_state']['enabled'] ) && '0' === $input['right_banner_code_state']['enabled'] ) {
+			unset( $output['right_banner_code_state']['enabled'] );
 		}
 
 		// Mobile banner image state.
-		if ( isset( $input['mobile_banner_image_state']['enabled'] ) ) {
+		$mobile_img_enabled = isset( $input['mobile_banner_image_state']['enabled'] ) && 'on' === $input['mobile_banner_image_state']['enabled'];
+		if ( $mobile_img_enabled ) {
 			$output['mobile_banner_image_state']['enabled'] = 'on';
 			$output['mobile_banner_image_state']['mobile_banner_image'] = array(
 				'id'  => isset( $input['mobile_banner_image_state']['mobile_banner_image']['id'] ) ? absint( $input['mobile_banner_image_state']['mobile_banner_image']['id'] ) : '',
 				'src' => isset( $input['mobile_banner_image_state']['mobile_banner_image']['src'] ) ? esc_url_raw( $input['mobile_banner_image_state']['mobile_banner_image']['src'] ) : '',
 			);
 			$output['mobile_banner_image_state']['mobile_banner_image_link'] = isset( $input['mobile_banner_image_state']['mobile_banner_image_link'] ) ? esc_url_raw( $input['mobile_banner_image_state']['mobile_banner_image_link'] ) : '#';
+		} elseif ( isset( $input['mobile_banner_image_state']['enabled'] ) && '0' === $input['mobile_banner_image_state']['enabled'] ) {
+			unset( $output['mobile_banner_image_state']['enabled'] );
 		}
 
 		// Mobile banner code state.
-		if ( isset( $input['mobile_banner_code_state']['enabled'] ) ) {
+		$mobile_code_enabled = isset( $input['mobile_banner_code_state']['enabled'] ) && 'on' === $input['mobile_banner_code_state']['enabled'];
+		if ( $mobile_code_enabled ) {
 			$output['mobile_banner_code_state']['enabled'] = 'on';
-			$output['mobile_banner_code_state']['mobile_banner_code'] = isset( $input['mobile_banner_code_state']['mobile_banner_code'] ) ? wp_kses_post( $input['mobile_banner_code_state']['mobile_banner_code'] ) : '';
+			$output['mobile_banner_code_state']['mobile_banner_code'] = isset( $input['mobile_banner_code_state']['mobile_banner_code'] ) ? wp_kses_post( stripslashes( $input['mobile_banner_code_state']['mobile_banner_code'] ) ) : '';
 			$output['mobile_banner_code_state']['mobile_banner_code_width'] = isset( $input['mobile_banner_code_state']['mobile_banner_code_width'] ) ? absint( $input['mobile_banner_code_state']['mobile_banner_code_width'] ) : 160;
 			$output['mobile_banner_code_state']['mobile_banner_code_height'] = isset( $input['mobile_banner_code_state']['mobile_banner_code_height'] ) ? absint( $input['mobile_banner_code_state']['mobile_banner_code_height'] ) : 600;
+		} elseif ( isset( $input['mobile_banner_code_state']['enabled'] ) && '0' === $input['mobile_banner_code_state']['enabled'] ) {
+			unset( $output['mobile_banner_code_state']['enabled'] );
 		}
 
 		return $output;
