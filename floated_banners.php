@@ -515,7 +515,6 @@ final class FloatedAds {
 	 * Render the admin settings page.
 	 */
 	public function render_admin_page() {
-		$active_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'general';
 		?>
 		<div class="wrap flads-wrap">
 			<div class="flads-header">
@@ -532,34 +531,32 @@ final class FloatedAds {
 			</div>
 
 			<div class="flads-body">
-				<nav class="flads-tabs">
-					<a href="<?php echo esc_url( admin_url( 'admin.php?page=floated-ads&tab=general' ) ); ?>" 
-						class="flads-tab <?php echo 'general' === $active_tab ? 'active' : ''; ?>">
+				<nav class="flads-tabs" id="flads-tab-nav">
+					<button type="button" class="flads-tab active" data-tab="general">
 						<span class="dashicons dashicons-admin-generic"></span>
 						<?php esc_html_e( 'General', 'floated-ads' ); ?>
-					</a>
-					<a href="<?php echo esc_url( admin_url( 'admin.php?page=floated-ads&tab=left_banner' ) ); ?>" 
-						class="flads-tab <?php echo 'left_banner' === $active_tab ? 'active' : ''; ?>">
+					</button>
+					<button type="button" class="flads-tab" data-tab="left_banner">
 						<span class="dashicons dashicons-align-pull-left"></span>
 						<?php esc_html_e( 'Left Banner', 'floated-ads' ); ?>
-					</a>
-					<a href="<?php echo esc_url( admin_url( 'admin.php?page=floated-ads&tab=right_banner' ) ); ?>" 
-						class="flads-tab <?php echo 'right_banner' === $active_tab ? 'active' : ''; ?>">
+					</button>
+					<button type="button" class="flads-tab" data-tab="right_banner">
 						<span class="dashicons dashicons-align-pull-right"></span>
 						<?php esc_html_e( 'Right Banner', 'floated-ads' ); ?>
-					</a>
-					<a href="<?php echo esc_url( admin_url( 'admin.php?page=floated-ads&tab=mobile_banner' ) ); ?>" 
-						class="flads-tab <?php echo 'mobile_banner' === $active_tab ? 'active' : ''; ?>">
+					</button>
+					<button type="button" class="flads-tab" data-tab="mobile_banner">
 						<span class="dashicons dashicons-smartphone"></span>
 						<?php esc_html_e( 'Mobile Banner', 'floated-ads' ); ?>
-					</a>
+					</button>
 				</nav>
 
 				<div class="flads-content">
 					<form method="post" action="options.php" class="flads-form">
 						<?php
 						settings_fields( self::OPTION_GROUP );
-						$this->render_tab_content( $active_tab );
+						// Render ALL tabs so all fields are submitted together.
+						// Only the active tab is shown via JS/CSS.
+						$this->render_all_tabs();
 						submit_button( esc_html__( 'Save Settings', 'floated-ads' ), 'primary flads-submit' );
 						?>
 					</form>
@@ -567,6 +564,48 @@ final class FloatedAds {
 			</div>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Render ALL tab contents (rendered in DOM, hidden via JS/CSS).
+	 */
+	private function render_all_tabs() {
+		$tabs = array(
+			'general'       => esc_html__( 'General', 'floated-ads' ),
+			'left_banner'   => esc_html__( 'Left Banner', 'floated-ads' ),
+			'right_banner'  => esc_html__( 'Right Banner', 'floated-ads' ),
+			'mobile_banner' => esc_html__( 'Mobile Banner', 'floated-ads' ),
+		);
+
+		$first = true;
+		foreach ( $tabs as $key => $label ) {
+			$style = $first ? '' : 'display:none;';
+			$first = false;
+			?>
+			<div class="flads-tab-panel" id="flads-tab-<?php echo esc_attr( $key ); ?>" style="<?php echo esc_attr( $style ); ?>">
+				<table class="form-table flads-table">
+					<tbody>
+						<?php
+						switch ( $key ) {
+							case 'general':
+								$this->render_general_tab();
+								break;
+							case 'left_banner':
+								$this->render_left_banner_tab();
+								break;
+							case 'right_banner':
+								$this->render_right_banner_tab();
+								break;
+							case 'mobile_banner':
+								$this->render_mobile_banner_tab();
+								break;
+						}
+						?>
+					</tbody>
+				</table>
+			</div>
+			<?php
+		}
 	}
 
 	/**

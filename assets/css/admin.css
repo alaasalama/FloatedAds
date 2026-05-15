@@ -119,6 +119,11 @@
     transition: all var(--flads-transition);
     margin-bottom: -1px;
     background: transparent;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    cursor: pointer;
+    font-family: inherit;
 }
 
 .flads-tab .dashicons {

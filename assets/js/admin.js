@@ -10,9 +10,31 @@
      * Initialize the admin functionality.
      */
     function init() {
+        initTabs();
         initConditionalToggles();
         initMediaUploader();
         initRemoveImage();
+    }
+
+    /**
+     * Initialize client-side tab switching.
+     * All tabs are rendered in the DOM, hidden/shown via JS.
+     */
+    function initTabs() {
+        $('#flads-tab-nav').on('click', '.flads-tab', function(e) {
+            e.preventDefault();
+
+            var $tab = $(this);
+            var tabId = $tab.data('tab');
+
+            // Update active tab button.
+            $tab.closest('#flads-tab-nav').find('.flads-tab').removeClass('active');
+            $tab.addClass('active');
+
+            // Show the corresponding panel, hide others.
+            $('.flads-tab-panel').hide();
+            $('#flads-tab-' + tabId).show();
+        });
     }
 
     /**
