@@ -1,0 +1,109 @@
+/* ===========================================
+   FloatedAds - Frontend Styles
+   Modern, clean banner display
+   =========================================== */
+
+/* ===========================================
+   Side Banners
+   =========================================== */
+
+.flads-banner {
+    position: fixed;
+    z-index: 99999;
+    display: none;
+    overflow: hidden;
+}
+
+.flads-banner img {
+    display: block;
+    max-width: none;
+    height: auto;
+}
+
+.flads-banner a {
+    display: block;
+    text-decoration: none;
+}
+
+.flads-banner a[href="#"] {
+    pointer-events: none;
+    cursor: default;
+}
+
+.flads-sticky {
+    position: fixed !important;
+}
+
+/* ===========================================
+   Mobile Footer Banner
+   =========================================== */
+
+.flads-mobile-banner {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    z-index: 99999;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding: 8px 0;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+}
+
+.flads-mobile-banner.visible {
+    transform: translateY(0);
+}
+
+.flads-mobile-banner img {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+    height: auto;
+    vertical-align: bottom;
+}
+
+.flads-mobile-banner a {
+    display: inline-block;
+    text-decoration: none;
+}
+
+.flads-mobile-banner .flads-close-btn {
+    position: absolute;
+    top: -14px;
+    right: 8px;
+    width: 28px;
+    height: 28px;
+    background: #ffffff;
+    border: 2px solid #333333;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.flads-mobile-banner .flads-close-btn:hover {
+    background: #f0f0f0;
+    transform: scale(1.1);
+}
+
+.flads-mobile-banner .flads-close-btn::before {
+    content: '×';
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+    line-height: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .flads-banner,
+    .flads-mobile-banner {
+        transition: none !important;
+    }
+}

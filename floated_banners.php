@@ -1,644 +1,1181 @@
-<?php 
-	/*
-		Plugin Name: FloatedAds
-		Plugin URI: http://lab.alaadesign.com/project/floated-ads/
-		Description: Plugin for displaying floated banners ads on both sides of your website.
-		Author: Alaa Salama
-		Version: 1.0
-		Author URI: http://lab.alaadesign.com
-	*/
+<?php
+/**
+ * Plugin Name:     FloatedAds
+ * Plugin URI:      https://lab.alaadesign.com
+ * Description:     Display floated banner ads on both sides of your website with a modern interface.
+ * Author:          Alaa Salama
+ * Version:         2.0.0
+ * Requires at least: 5.8
+ * Tested up to:     6.7
+ * Requires PHP:      7.4
+ * Author URI:       https://lab.alaadesign.com
+ * Text Domain:      floated-ads
+ * Domain Path:      /languages
+ * License:          GPL v3 or later
+ * License URI:      https://www.gnu.org/licenses/gpl-3.0.html
+ *
+ * @package FloatedAds
+ */
 
-/* Admin Panel Section */
+// Prevent direct access.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
 
-	//include the main class file
-	require_once("admin/flban_admin_framework.php");	
-	//configure your admin page
-	$config = array(    
-		'menu'=> array('top' => 'floated-ads'),             //register the menu item settings
-	    'page_title'     => __('FloatedAds','apc'),       //The name of this page 
-	    'capability'     => 'edit_themes',         // The capability needed to view the page 
-	    'option_group'   => 'flads_options',       //the name of the option to create in the database
-	    'id'             => 'floated-ads',            // meta box id, unique per page
-	    'fields'         => array(),            // list of fields (can be added by field arrays)
-	    'local_images'   => false,          // Use local or hosted images (meta box images for add/remove)
-	    'use_with_theme' => false          //change path if used with theme set to true, false for a plugin or anything else for a custom path(default false).
-	);
+// Define plugin constants.
+define( 'FLADS_VERSION', '2.0.0' );
+define( 'FLADS_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
+define( 'FLADS_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
+define( 'FLADS_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 
-	//initiate your admin page
-	$options_panel = new BF_Admin_Page_Class($config);
-	$options_panel->OpenTabs_container('');
+/**
+ * Main plugin class.
+ */
+final class FloatedAds {
 
-	//define your admin page tabs listing
-	$options_panel->TabsListing(array(
-	    'links' => array(
-	    	'general' =>  __('General','apc'),
-	    	'left_banner' =>  __('Left Banner','apc'),		    	
-	    	'right_banner' =>  __('Right Content','apc'),
-	    	'mobile_banner' =>  __('Mobile Banner','apc'),
-	    )
-	));
+	/**
+	 * Plugin options.
+	 *
+	 * @var array
+	 */
+	private static $options = null;
 
-//general settings panel
-	$options_panel->OpenTab('general');
-	//title
-	$options_panel->Title(__("General Settings","apc"));
-	//theme content width
-	//getting the homepage url link
-	$home_url_link = get_home_url();	
-	$options_panel->addText('main_content_width',
-		array(
-			'name'     => __('Enter the width of your main website container','apc'),
-			'std'      => 1220,
-			'desc'     => __("Your banners will be positioned on the sides of this container width, use <a href='https://www.piliapp.com/measure-webpage/?src=".$home_url_link."' class='measure_url'>this tool</a> to help you measuring your website container width.","apc"),
-			'validate' => array(
-				'numeric' => array(
-					'param' => '',
-					'message' => __("must be numeric value","apc")
-				)
-			)
-		)
-	);
-	//minimum window width to display banners
-	$options_panel->addText('container_min_width',
-		array(
-			'name'     => __('Minimum browser window size to show the banners','apc'),
-			'std'      => 1000,
-			'desc'     => __("Your banners will not be displayed on browser window less than this value, suitable to hide the banners on small screens","apc"),
-			'validate' => array(
-				'numeric' => array(
-					'param' => '',
-					'message' => __("must be numeric value","apc")
-				)
-			)
-		)
-	);
-	//margin top for banners
-	$options_panel->addText('FloatedAds_margin_top',
-		array(
-			'name'     => __('Top Margin Adjustment','apc'),
-			'std'      => 0,
-			'desc'     => __("Enter numeric value of the top margin adjustment","apc"),
-			'validate' => array(
-				'numeric' => array(
-					'param' => '',
-					'message' => __("must be numeric value","apc")
-				)
-			)
-		)
-	);
-	//left margin from the main layout
-	$options_panel->addText('FloatedAds_margin_left',
-		array(
-			'name'     => __('Left Margin Adjustment','apc'),
-			'std'      => 0,
-			'desc'     => __("Enter numeric value of the left margin adjustment","apc"),
-			'validate' => array(
-				'numeric' => array(
-					'param' => '',
-					'message' => __("must be numeric value","apc")
-				)
-			)
-		)
-	);
-	//right margin from the main layout
-	$options_panel->addText('FloatedAds_margin_right',
-		array(
-			'name'     => __('Right Margin Adjustment','apc'),
-			'std'      => 0,
-			'desc'     => __("Enter numeric value of the right margin adjustment","apc"),
-			'validate' => array(
-				'numeric' => array(
-					'param' => '',
-					'message' => __("must be numeric value","apc")
-				)
-			)
-		)
-	);
-	//show banners on homepage checkbox
-	$options_panel->addCheckbox('show_on_homepage',
-		array(
-			'name'=> __('Show banners on homeapge only','apc'),
-			'std' => false,
-			'desc' => __('Activate this option to show the banners on homepage only','apc')
-		)
-	);
-	//end of general settings panel
-	$options_panel->CloseTab();
+	/**
+	 * Option group name.
+	 *
+	 * @var string
+	 */
+	const OPTION_GROUP = 'flads_options';
 
-//left banner settings panel
-	$options_panel->OpenTab('left_banner');
-	//title
-	$options_panel->Title(__("Left Banner Settings","apc"));	
-	//checkbox to check if left banner is active
-	$options_panel->addCheckbox('left_banner_active',
-		array(
-			'name'=> __('Activate Left Banner Area','apc'),
-			'std' => true, 
-			'desc' => __('Activate this option to display the left banner area','apc')
-		)
-	);
-	//checkbox to check if left banner is sticky
-	$options_panel->addCheckbox('left_banner_sticky',
-		array(
-			'name'=> __('Activate Sticky Option','apc'),
-			'std' => true,
-			'desc' => __('Activate this option to display the banner in a sticky style','apc')
-		)
-	);
-	//left banner image condition fields
-	$left_banner_image_cond[] = $options_panel->addImage('left_banner_image',
-		array('name'=> __('Upload banner image','apc'))
-		,true
-	);
-	//left banner image condition fields
-	$left_banner_image_cond[] = $options_panel->addText('left_banner_image_link',
-		array(
-			'name'=> __('Enter your banner image link','apc'),
-			'std'      => '#',
-			'desc'     => __("Add your banner image link, or keep it set to # in case you don't want to link your image anywhere!","apc"),
-		)
-		,true
-	);
-	//left banner code condition fields
-	$left_banner_code_cond[] = $options_panel->addTextarea('left_banner_code',
-		array(
-			'name'=> __('Add your banner custom code','apc'),
-			'std'=> __('You can use any banner code here including Google Adsense code', 'apc')
-		)
-		,true
-	);
-	//left banner code condition fields
-	$left_banner_code_cond[] = $options_panel->addText('left_banner_code_width',
-		array(
-			'name'     => __('Your custom banner code width','apc'),
-			'std'      => 160,
-			'desc'     => __("Enter numeric value of the banner width","apc"),
-			'validate' => array(
-				'numeric' => array(
-					'param' => '','message' => __("must be numeric value","apc")
-				)
-			)
-		)
-		,true
-	);
-	//left banner code condition fields
-	$left_banner_code_cond[] = $options_panel->addText('left_banner_code_height',
-		array(
-			'name'     => __('Your custom banner height','apc'),
-			'std'      => 600,
-			'desc'     => __("Enter numeric value of the banner height","apc"),
-			'validate' => array(
-				'numeric' => array(
-					'param' => '',
-					'message' => __("must be numeric value","apc")
-				)
-			)
-		)
-		,true
-	);
-	//conditinal check box for left banner image 
-	$options_panel->addCondition('left_banner_image_state',
-		array(
-			'name'   => __('Use image banner?','apc'),
-			'fields' => $left_banner_image_cond,
-			'std'    => false,
-		)
-	);
-	//conditinal check box for left banner code 
-	$options_panel->addCondition('left_banner_code_state',
-		array(
-			'name'   => __('Use custom code banner?','apc'),
-			'fields' => $left_banner_code_cond,
-			'std'    => false,
-		)
-	);
-	//end of left banner settings panel
-	$options_panel->CloseTab();
-
-//right banner settings panel
-	$options_panel->OpenTab('right_banner');
-	//title
-	$options_panel->Title(__("Right Banner Settings","apc"));
-	//checkbox to check if right banner is active
-	$options_panel->addCheckbox('right_banner_active',
-		array(
-			'name'=> __('Activate Right Banner Area','apc'),
-			'std' => true, 
-			'desc' => __('Activate this option to display the Right banner area','apc')
-		)
-	);
-	//checkbox to check if right banner is sticky
-	$options_panel->addCheckbox('right_banner_sticky',
-		array(
-			'name'=> __('Activate Sticky Option','apc'), 
-			'std' => false, 
-			'desc' => __('Activate this option to display the banner in a sticky style','apc')
-		)
-	);
-	//right banner image condition fields
-	$right_banner_image_cond[] = $options_panel->addImage('right_banner_image',
-		array('name'=> __('Upload banner image','apc'))
-		,true
-	);
-	//right banner image condition fields
-	$right_banner_image_cond[] = $options_panel->addText('right_banner_image_link',
-		array(
-			'name'     => __('Enter your banner image link','apc'),
-			'std'      => '#',
-			'desc'     => __("Add your banner image link, or keep it set to # in case you don't want to link your image anywhere!","apc"),
-		)
-		,true
-	);
-	//right banner code condition fields
-	$right_banner_code_cond[] = $options_panel->addTextarea('right_banner_code',
-		array(
-			'name'=> __('Add your banner custom code','apc'),
-			'std'=> __('You can use any banner code here including Google Adsense code', 'apc')
-		)
-		,true
-	);
-	//right banner code condition fields
-	$right_banner_code_cond[] = $options_panel->addText('right_banner_code_width',
-		array(
-			'name'     => __('Your custom banner width','apc'),
-			'std'      => 160,
-			'desc'     => __("Enter numeric value of the banner width","apc"),
-			'validate' => array(
-				'numeric' => array(
-					'param' => '',
-					'message' => __("must be numeric value","apc")
-				)
-			)
-		)
-		,true
-	);
-	//right banner code condition fields
-	$right_banner_code_cond[] = $options_panel->addText('right_banner_code_height',
-		array(
-			'name'     => __('Your custom banner height','apc'),
-			'std'      => 600,
-			'desc'     => __("Enter numeric value of the banner height","apc"),
-			'validate' => array(
-				'numeric' => array(
-					'param' => '',
-					'message' => __("must be numeric value","apc")
-				)
-			)
-		)
-		,true
-	);
-	//conditinal check box for right banner image
-	$options_panel->addCondition('right_banner_image_state',
-		array(
-			'name'   => __('Use image banner?','apc'),
-			'fields' => $right_banner_image_cond,
-			'std'    => false,
-		)
-	);
-	//conditinal check box for right banner code
-	$options_panel->addCondition('right_banner_code_state',
-		array(
-			'name'   => __('Use custom code banner?','apc'),
-			'fields' => $right_banner_code_cond,
-			'std'    => false,
-		)
-	);
-	//end of right banner settings panel
-	$options_panel->CloseTab();
-
-//mobile banner settings panel
-	$options_panel->OpenTab('mobile_banner');
-	//title
-	$options_panel->Title(__("Mobile Banner Settings","apc"));
-	//checkbox to check if mobile banner is active or not
-	$options_panel->addCheckbox('show_mobile_banner',
-		array(
-			'name'=> __('Show Footer Banner on Mobile Devices','apc'),
-			'std' => false, 
-			'desc' => __('Activate this option to show footer banner on mobile devices including tablets','apc')
-		)
-	);
-	//mobile banner image condition
-	$mobile_banner_image_cond[] = $options_panel->addImage('mobile_banner_image',
-		array('name'=> __('Upload banner image','apc'))
-		,true
-	);
-	//mobile banner image condition
-	$mobile_banner_image_cond[] = $options_panel->addText('mobile_banner_image_link',
-		array(
-			'name'     => __('Enter your banner image link','apc'),
-			'std'      => '#',
-			'desc'     => __("Add your banner image link, or keep it set to # in case you don't want to link your image anywhere!","apc"),
-		)
-		,true
-	);
-	//mobile banner code condition
-	$mobile_banner_code_cond[] = $options_panel->addTextarea('mobile_banner_code',
-		array(
-			'name'=> __('Add your banner custom code','apc'),
-			'std'=> __('You can use any banner code here including Google Adsense code', 'apc')
-		)
-		,true
-	);
-	//mobile banner code condition
-	$mobile_banner_code_cond[] = $options_panel->addText('mobile_banner_code_width',
-		array(
-			'name'     => __('Your custom banner width','apc'),
-			'std'      => 160,
-			'desc'     => __("Enter numeric value of the banner width","apc"),
-			'validate' => array(
-				'numeric' => array(
-					'param' => '',
-					'message' => __("must be numeric value","apc")
-				)
-			)
-		)
-		,true
-	);
-	//mobile banner code condition
-	$mobile_banner_code_cond[] = $options_panel->addText('mobile_banner_code_height',
-		array(
-			'name'     => __('Your custom banner height','apc'),
-			'std'      => 600,
-			'desc'     => __("Enter numeric value of the banner height","apc"),
-			'validate' => array(
-				'numeric' => array(
-					'param' => '',
-					'message' => __("must be numeric value","apc")
-				)
-			)
-		)
-		,true
-	);
-	//conditinal check box for mobile banner image
-	$options_panel->addCondition('mobile_banner_image_state',
-		array(
-			'name'   => __('Use image banner?','apc'),
-			'fields' => $mobile_banner_image_cond,
-			'std'    => false,
-		)
-	);
-	//conditinal check box for mobile banner code
-	$options_panel->addCondition('mobile_banner_code_state',
-		array(
-			'name'   => __('Use custom code banner?','apc'),
-			'fields' => $mobile_banner_code_cond,
-			'std'    => false,
-		)
-	);
-	//end of mobile banner panel settings
-	$options_panel->CloseTab();
-
-/*** end of admin panel section ***/
-
-/*** front end implemntation ***/
-
-	//register main function
-	function FloatedAds_main(){
-		//load the saved data from the data base
-		$FloatedAds_data = get_option('flads_options');
-
-		if($FloatedAds_data['left_banner_active'] || $FloatedAds_data['right_banner_active']){
-			//include the script only if at least any of the banners is active
-			add_action('wp_enqueue_scripts','FloatedAds_load_script');
-			function FloatedAds_load_script() {
-			    wp_enqueue_script( 'FloatedAds.js', plugins_url( '/js/FloatedAds.js', __FILE__ ));
-			    wp_enqueue_style( 'FloatedAds.css', plugins_url( '/css/style.css', __FILE__ ));
-			}
-			add_action('wp_footer', 'FloatedAds_load_ads');			
-		}	
+	/**
+	 * Init the plugin.
+	 */
+	public static function init() {
+		$plugin = new self();
+		$plugin->setup_hooks();
 	}
 
-	//call the main fucntion
-	add_action('init', 'FloatedAds_main');
+	/**
+	 * Setup WordPress hooks.
+	 */
+	private function setup_hooks() {
+		// Admin hooks.
+		add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
+		add_action( 'admin_init', array( $this, 'register_settings' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
 
-	//load the banners
-	function FloatedAds_load_ads(){
-		//load the saved data from the data base
-		$FloatedAds_data = get_option('flads_options');
+		// Frontend hooks.
+		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_frontend_assets' ) );
+		add_action( 'wp_footer', array( $this, 'render_banner_html' ), 100 );
 
-		//check if the right banner is active
-		if ($FloatedAds_data['right_banner_active'] == "1"){
-			//check if the image option is active and there is an image assigned
-			if (isset($FloatedAds_data['right_banner_image_state']['enabled']) && $FloatedAds_data['right_banner_image_state']['right_banner_image']['src']!=="") {
-					$right_banner_url = $FloatedAds_data['right_banner_image_state']['right_banner_image']['src'];
-					$right_banner_link = $FloatedAds_data['right_banner_image_state']['right_banner_image_link'];
-					list($right_banner_width, $right_banner_height, $right_banner_type, $right_banner_attr) = getimagesize($right_banner_url);
-					$right_banner_is_on = $right_banner_is_image = 1;
-					$right_banner_is_code = 0;
-					?>
-					<script>
-						var right_banner_on = <?php echo $right_banner_is_on; ?>;
-						var right_banner_url = <?php echo json_encode($right_banner_url); ?>;
-     				var right_banner_link = <?php echo json_encode($right_banner_link); ?>;
-     				var RightBannerW = <?php echo $right_banner_width; ?>;
-      			var RightBannerH = <?php echo $right_banner_height; ?>;
-      			var right_banner_is_image_js = <?php echo $right_banner_is_image; ?>;
-  					var right_banner_is_code_js = <?php echo $right_banner_is_code; ?>;
-					</script>
-					<?php
-			}
-			//check if the code option is active
-			elseif (isset($FloatedAds_data['right_banner_code_state']['enabled'])) {
-					$right_banner_custom = $FloatedAds_data['right_banner_code_state']['right_banner_code'];
-					$right_banner_is_on = $right_banner_is_code = 1;
-					$right_banner_is_image = $right_banner_width = $right_banner_height = 0;
-					?>
-					<script>
-						var right_banner_on = <?php echo $right_banner_is_on; ?>;
-      			var right_banner_custom = <?php echo json_encode($right_banner_custom); ?>;
-      			var RightBannerW = <?php echo $FloatedAds_data['right_banner_code_state']['right_banner_code_width']; ?>;
-      			var RightBannerH = <?php echo $FloatedAds_data['right_banner_code_state']['right_banner_code_height']; ?>;
-      			var right_banner_is_image_js = <?php echo $right_banner_is_image; ?>;
-  					var right_banner_is_code_js = <?php echo $right_banner_is_code; ?>;	
-					</script>
-					<?php
-			}
-			//if not code nor image
-			else {
-				$right_banner_is_on = $right_banner_width = $right_banner_height = $right_banner_is_image = $right_banner_is_code = 0;
-				?>
-					<script>
-						var right_banner_on = <?php echo $right_banner_is_on; ?>;
-            var right_banner_is_image_js = <?php echo $right_banner_is_image; ?>;
-          	var right_banner_is_code_js = <?php echo $right_banner_is_code; ?>;	
-					</script>
-				<?php
-			}
-		}//end of the right banner
+		// REST API.
+		add_action( 'rest_api_init', array( $this, 'register_rest_routes' ) );
 
-		//check if the left banner is active and there is an image assigned
-		if ($FloatedAds_data['left_banner_active'] == "1"){
-			if (isset($FloatedAds_data['left_banner_image_state']['enabled']) && $FloatedAds_data['left_banner_image_state']['left_banner_image']['src']!==""){
-					$left_banner_url = $FloatedAds_data['left_banner_image_state']['left_banner_image']['src'];
-					$left_banner_link = $FloatedAds_data['left_banner_image_state']['left_banner_image_link'];
-					list($left_banner_width, $left_banner_height, $left_banner_type, $left_banner_attr) = getimagesize($left_banner_url);
-					$left_banner_is_on = $left_banner_is_image = 1; 
-					$left_banner_is_code = 0;	
-					?>
-					<script>
-						var left_banner_on = <?php echo $left_banner_is_on; ?>;
-						var left_banner_url = <?php echo json_encode($left_banner_url); ?>;
-          	var left_banner_link = <?php echo json_encode($left_banner_link); ?>;
-          	var LeftBannerW = <?php echo $left_banner_width; ?>;
-          	var LeftBannerH = <?php echo $left_banner_height; ?>;
-          	var left_banner_is_image_js = <?php echo $left_banner_is_image; ?>;
-          	var left_banner_is_code_js = <?php echo $left_banner_is_code; ?>;
-					</script>
-					<?php
-			}
-			//check if the left banner code is active
-			elseif (isset($FloatedAds_data['left_banner_code_state']['enabled'])) {
-				$left_banner_custom = $FloatedAds_data['left_banner_code_state']['left_banner_code'];
-				$left_banner_is_on = $left_banner_is_code = 1; 
-				$left_banner_is_image = $left_banner_width = $left_banner_height = 0;
-				?>
-				<script>
-					var left_banner_on = <?php echo $left_banner_is_on; ?>;
-     			var left_banner_custom = <?php echo json_encode($left_banner_custom); ?>;
-					var LeftBannerW = <?php echo $FloatedAds_data['left_banner_code_state']['left_banner_code_width']; ?>;
-     			var LeftBannerH = <?php echo $FloatedAds_data['left_banner_code_state']['left_banner_code_height']; ?>;
-     			var left_banner_is_image_js = <?php echo $left_banner_is_image; ?>;
-  				var left_banner_is_code_js = <?php echo $left_banner_is_code; ?>;	
-				</script>
-				<?php
-			}
-			//if not code nor image
-			else {
-				$left_banner_is_on = $left_banner_width = $left_banner_height = $left_banner_is_image = $left_banner_is_code = 0;
-				?>
-				<script>
-					var left_banner_on = <?php echo $left_banner_is_on; ?>;
-          var left_banner_is_image_js = <?php echo $left_banner_is_image; ?>;
-          var left_banner_is_code_js = <?php echo $left_banner_is_code; ?>;	
-				</script>
-				<?php
-			}
-		}//end of the left banner
+		// Load textdomain.
+		add_action( 'plugins_loaded', array( $this, 'load_textdomain' ) );
 
-		//if the left banner is not active
-		if ($FloatedAds_data['left_banner_active'] == ""){
-			$left_banner_is_on = 0;
-			?>
-				<script>
-					var left_banner_on = <?php echo $left_banner_is_on; ?>;
-				</script>
-			<?php
+		// Plugin action links.
+		add_filter( 'plugin_action_links_' . FLADS_PLUGIN_BASENAME, array( $this, 'add_action_links' ) );
+	}
+
+	/**
+	 * Load text domain for translations.
+	 */
+	public function load_textdomain() {
+		load_plugin_textdomain( 'floated-ads', false, dirname( FLADS_PLUGIN_BASENAME ) . '/languages' );
+	}
+
+	/**
+	 * Add settings link on plugin page.
+	 *
+	 * @param array $links Existing links.
+	 * @return array
+	 */
+	public function add_action_links( $links ) {
+		$settings_link = '<a href="' . admin_url( 'admin.php?page=floated-ads' ) . '">' . esc_html__( 'Settings', 'floated-ads' ) . '</a>';
+		array_unshift( $links, $settings_link );
+		return $links;
+	}
+
+	/**
+	 * Register the admin menu page.
+	 */
+	public function add_admin_menu() {
+		add_menu_page(
+			esc_html__( 'FloatedAds', 'floated-ads' ),
+			esc_html__( 'FloatedAds', 'floated-ads' ),
+			'manage_options',
+			'floated-ads',
+			array( $this, 'render_admin_page' ),
+			'dashicons-align-wide',
+			100
+		);
+	}
+
+	/**
+	 * Register plugin settings with WordPress Settings API.
+	 */
+	public function register_settings() {
+		register_setting(
+			self::OPTION_GROUP,
+			self::OPTION_GROUP,
+			array(
+				'sanitize_callback' => array( $this, 'sanitize_options' ),
+				'default'           => $this->get_default_options(),
+			)
+		);
+
+		// General Settings Section.
+		add_settings_section(
+			'flads_general',
+			esc_html__( 'General Settings', 'floated-ads' ),
+			'__return_empty_string',
+			'floated-ads-general'
+		);
+
+		add_settings_field(
+			'main_content_width',
+			esc_html__( 'Website Container Width', 'floated-ads' ),
+			array( $this, 'field_text' ),
+			'floated-ads-general',
+			'flads_general',
+			array(
+				'id'          => 'main_content_width',
+				'std'         => 1220,
+				'description' => esc_html__( 'Your banners will be positioned on the sides of this container width.', 'floated-ads' ),
+				'type'        => 'number',
+			)
+		);
+
+		add_settings_field(
+			'container_min_width',
+			esc_html__( 'Minimum Window Width', 'floated-ads' ),
+			array( $this, 'field_text' ),
+			'floated-ads-general',
+			'flads_general',
+			array(
+				'id'          => 'container_min_width',
+				'std'         => 1000,
+				'description' => esc_html__( 'Hide banners on screens narrower than this value.', 'floated-ads' ),
+				'type'        => 'number',
+			)
+		);
+
+		add_settings_field(
+			'FloatedAds_margin_top',
+			esc_html__( 'Top Margin (px)', 'floated-ads' ),
+			array( $this, 'field_text' ),
+			'floated-ads-general',
+			'flads_general',
+			array(
+				'id'          => 'FloatedAds_margin_top',
+				'std'         => 0,
+				'description' => esc_html__( 'Vertical offset for banner positioning.', 'floated-ads' ),
+				'type'        => 'number',
+			)
+		);
+
+		add_settings_field(
+			'FloatedAds_margin_left',
+			esc_html__( 'Left Margin (px)', 'floated-ads' ),
+			array( $this, 'field_text' ),
+			'floated-ads-general',
+			'flads_general',
+			array(
+				'id'          => 'FloatedAds_margin_left',
+				'std'         => 0,
+				'description' => esc_html__( 'Left offset adjustment for left banner.', 'floated-ads' ),
+				'type'        => 'number',
+			)
+		);
+
+		add_settings_field(
+			'FloatedAds_margin_right',
+			esc_html__( 'Right Margin (px)', 'floated-ads' ),
+			array( $this, 'field_text' ),
+			'floated-ads-general',
+			'flads_general',
+			array(
+				'id'          => 'FloatedAds_margin_right',
+				'std'         => 0,
+				'description' => esc_html__( 'Right offset adjustment for right banner.', 'floated-ads' ),
+				'type'        => 'number',
+			)
+		);
+
+		add_settings_field(
+			'show_on_homepage',
+			esc_html__( 'Homepage Only', 'floated-ads' ),
+			array( $this, 'field_checkbox' ),
+			'floated-ads-general',
+			'flads_general',
+			array(
+				'id'          => 'show_on_homepage',
+				'description' => esc_html__( 'Only show banners on the homepage.', 'floated-ads' ),
+			)
+		);
+	}
+
+	/**
+	 * Get default options.
+	 *
+	 * @return array
+	 */
+	private function get_default_options() {
+		return array(
+			'main_content_width'     => 1220,
+			'container_min_width'    => 1000,
+			'FloatedAds_margin_top'  => 0,
+			'FloatedAds_margin_left' => 0,
+			'FloatedAds_margin_right' => 0,
+			'show_on_homepage'       => 0,
+			'left_banner_active'     => 1,
+			'left_banner_sticky'     => 1,
+			'left_banner_image_state' => array(),
+			'left_banner_code_state'  => array(),
+			'right_banner_active'    => 1,
+			'right_banner_sticky'    => 0,
+			'right_banner_image_state' => array(),
+			'right_banner_code_state'  => array(),
+			'show_mobile_banner'     => 0,
+			'mobile_banner_image_state' => array(),
+			'mobile_banner_code_state'  => array(),
+		);
+	}
+
+	/**
+	 * Get plugin option value.
+	 *
+	 * @param string $key     Option key.
+	 * @param mixed  $default Default value.
+	 * @return mixed
+	 */
+	public static function get_option( $key, $default = '' ) {
+		if ( null === self::$options ) {
+			self::$options = get_option( self::OPTION_GROUP, array() );
 		}
-		//if the right banner is not active
-		if ($FloatedAds_data['right_banner_active'] == ""){
-			$right_banner_is_on = 0;
-			?>
-				<script>
-        	var right_banner_on = <?php echo $right_banner_is_on; ?>;
-				</script>
-			<?php
+		return isset( self::$options[ $key ] ) ? self::$options[ $key ] : $default;
+	}
+
+	/**
+	 * Sanitize options before saving.
+	 *
+	 * @param array $input Raw input.
+	 * @return array
+	 */
+	public function sanitize_options( $input ) {
+		$output = $this->get_default_options();
+
+		if ( ! is_array( $input ) ) {
+			return $output;
 		}
-			
-		//check if mobile banner is active
-		if ($FloatedAds_data['show_mobile_banner'] == "1"){
-			//check if the mobile banner image option is active and there is an image assigned
-			if (isset($FloatedAds_data['mobile_banner_image_state']['enabled']) && $FloatedAds_data['mobile_banner_image_state']['mobile_banner_image']['src']!==""){
-				$mobile_banner_url = $FloatedAds_data['mobile_banner_image_state']['mobile_banner_image']['src'];
-				$mobile_banner_link = $FloatedAds_data['mobile_banner_image_state']['mobile_banner_image_link'];
-				list($mobile_banner_width, $mobile_banner_height, $mobile_banner_type, $mobile_banner_attr) = getimagesize($mobile_banner_url);
-				$mobile_banner_is_on = $mobile_banner_is_image = 1;
-				$mobile_banner_is_code = 0;
-				?>
-				<script>
-					var mobile_banner_is_on = <?php echo $mobile_banner_is_on; ?>;
-					var mobile_banner_url = <?php echo json_encode($mobile_banner_url); ?>;
-        	var mobile_banner_link = <?php echo json_encode($mobile_banner_link); ?>;
-        	var MobileBannerW = <?php echo $mobile_banner_width; ?>;
-        	var MobileBannerH = <?php echo $mobile_banner_height; ?>;
-        	var mobile_banner_is_image = <?php echo $mobile_banner_is_image; ?>;
-        	var mobile_banner_is_code = <?php echo $mobile_banner_is_code; ?>;
-				</script>
-				<?php
-			}
-			//check if the mobile banner code option is active
-			elseif (isset($FloatedAds_data['mobile_banner_code_state']['enabled'])) {
-				$mobile_banner_custom = $FloatedAds_data['mobile_banner_code_state']['mobile_banner_code'];
-				$mobile_banner_is_on = $mobile_banner_is_code = 1; 
-				$mobile_banner_is_image = $mobile_banner_width = $mobile_banner_height = 0;
-				?>
-				<script>
-					var mobile_banner_is_on = <?php echo $mobile_banner_is_on; ?>;
-          var mobile_banner_custom = <?php echo json_encode($mobile_banner_custom); ?>;
-					var MobileBannerW = <?php echo $FloatedAds_data['mobile_banner_code_state']['mobile_banner_code_width']; ?>;
-          var MobileBannerH = <?php echo $FloatedAds_data['mobile_banner_code_state']['mobile_banner_code_height']; ?>;
-          var mobile_banner_is_image = <?php echo $mobile_banner_is_image; ?>;
-          var mobile_banner_is_code = <?php echo $mobile_banner_is_code; ?>;	
-				</script>
-				<?php
-			}
-			//if neitehr image nor code is active
-			else {
-				$mobile_banner_is_on = $mobile_banner_width = $mobile_banner_height = $mobile_banner_is_image = $mobile_banner_is_code = 0;
-				?>
-				<script>
-					var mobile_banner_is_on = <?php echo $mobile_banner_is_on; ?>;
-          var mobile_banner_is_image = <?php echo $mobile_banner_is_image; ?>;
-          var mobile_banner_is_code = <?php echo $mobile_banner_is_code; ?>;	
-				</script>
-				<?php
-			}
-		}//end of mobile banners
 
-		//getting device state
-		if (wp_is_mobile()){ $device_is_mobile = 1; }
-		if (!wp_is_mobile()){	$device_is_mobile = 0; }
-		
-		//getting minmium screen width, and main theme layout width
-		$screen_w	=	$FloatedAds_data['container_min_width'];
-		$MainContentW	=	$FloatedAds_data['main_content_width'];
-		
-		//getting the adjustment margin values
-		$LeftAdjust		=	$FloatedAds_data['FloatedAds_margin_left'];
-		$RightAdjust	=	$FloatedAds_data['FloatedAds_margin_right'];
-		$TopAdjust		=	$FloatedAds_data['FloatedAds_margin_top'];
+		// Numeric fields.
+		$numeric_fields = array(
+			'main_content_width',
+			'container_min_width',
+			'FloatedAds_margin_top',
+			'FloatedAds_margin_left',
+			'FloatedAds_margin_right',
+		);
+		foreach ( $numeric_fields as $field ) {
+			$output[ $field ] = isset( $input[ $field ] ) ? absint( $input[ $field ] ) : 0;
+		}
 
-		//getting the sticky state
-		if ($FloatedAds_data['left_banner_sticky'] == "1"){ $left_banner_is_sticky = 1;} else { $left_banner_is_sticky = 0;};
-		if ($FloatedAds_data['right_banner_sticky'] == "1"){ $right_banner_is_sticky = 1;} else { $right_banner_is_sticky = 0;};
+		// Checkboxes.
+		$checkbox_fields = array(
+			'show_on_homepage',
+			'left_banner_active',
+			'left_banner_sticky',
+			'right_banner_active',
+			'right_banner_sticky',
+			'show_mobile_banner',
+		);
+		foreach ( $checkbox_fields as $field ) {
+			$output[ $field ] = ! empty( $input[ $field ] ) ? 1 : 0;
+		}
+
+		// Left banner image state.
+		if ( isset( $input['left_banner_image_state']['enabled'] ) ) {
+			$output['left_banner_image_state']['enabled'] = 'on';
+			$output['left_banner_image_state']['left_banner_image'] = array(
+				'id'  => isset( $input['left_banner_image_state']['left_banner_image']['id'] ) ? absint( $input['left_banner_image_state']['left_banner_image']['id'] ) : '',
+				'src' => isset( $input['left_banner_image_state']['left_banner_image']['src'] ) ? esc_url_raw( $input['left_banner_image_state']['left_banner_image']['src'] ) : '',
+			);
+			$output['left_banner_image_state']['left_banner_image_link'] = isset( $input['left_banner_image_state']['left_banner_image_link'] ) ? esc_url_raw( $input['left_banner_image_state']['left_banner_image_link'] ) : '#';
+		}
+
+		// Left banner code state.
+		if ( isset( $input['left_banner_code_state']['enabled'] ) ) {
+			$output['left_banner_code_state']['enabled'] = 'on';
+			$output['left_banner_code_state']['left_banner_code'] = isset( $input['left_banner_code_state']['left_banner_code'] ) ? wp_kses_post( $input['left_banner_code_state']['left_banner_code'] ) : '';
+			$output['left_banner_code_state']['left_banner_code_width'] = isset( $input['left_banner_code_state']['left_banner_code_width'] ) ? absint( $input['left_banner_code_state']['left_banner_code_width'] ) : 160;
+			$output['left_banner_code_state']['left_banner_code_height'] = isset( $input['left_banner_code_state']['left_banner_code_height'] ) ? absint( $input['left_banner_code_state']['left_banner_code_height'] ) : 600;
+		}
+
+		// Right banner image state.
+		if ( isset( $input['right_banner_image_state']['enabled'] ) ) {
+			$output['right_banner_image_state']['enabled'] = 'on';
+			$output['right_banner_image_state']['right_banner_image'] = array(
+				'id'  => isset( $input['right_banner_image_state']['right_banner_image']['id'] ) ? absint( $input['right_banner_image_state']['right_banner_image']['id'] ) : '',
+				'src' => isset( $input['right_banner_image_state']['right_banner_image']['src'] ) ? esc_url_raw( $input['right_banner_image_state']['right_banner_image']['src'] ) : '',
+			);
+			$output['right_banner_image_state']['right_banner_image_link'] = isset( $input['right_banner_image_state']['right_banner_image_link'] ) ? esc_url_raw( $input['right_banner_image_state']['right_banner_image_link'] ) : '#';
+		}
+
+		// Right banner code state.
+		if ( isset( $input['right_banner_code_state']['enabled'] ) ) {
+			$output['right_banner_code_state']['enabled'] = 'on';
+			$output['right_banner_code_state']['right_banner_code'] = isset( $input['right_banner_code_state']['right_banner_code'] ) ? wp_kses_post( $input['right_banner_code_state']['right_banner_code'] ) : '';
+			$output['right_banner_code_state']['right_banner_code_width'] = isset( $input['right_banner_code_state']['right_banner_code_width'] ) ? absint( $input['right_banner_code_state']['right_banner_code_width'] ) : 160;
+			$output['right_banner_code_state']['right_banner_code_height'] = isset( $input['right_banner_code_state']['right_banner_code_height'] ) ? absint( $input['right_banner_code_state']['right_banner_code_height'] ) : 600;
+		}
+
+		// Mobile banner image state.
+		if ( isset( $input['mobile_banner_image_state']['enabled'] ) ) {
+			$output['mobile_banner_image_state']['enabled'] = 'on';
+			$output['mobile_banner_image_state']['mobile_banner_image'] = array(
+				'id'  => isset( $input['mobile_banner_image_state']['mobile_banner_image']['id'] ) ? absint( $input['mobile_banner_image_state']['mobile_banner_image']['id'] ) : '',
+				'src' => isset( $input['mobile_banner_image_state']['mobile_banner_image']['src'] ) ? esc_url_raw( $input['mobile_banner_image_state']['mobile_banner_image']['src'] ) : '',
+			);
+			$output['mobile_banner_image_state']['mobile_banner_image_link'] = isset( $input['mobile_banner_image_state']['mobile_banner_image_link'] ) ? esc_url_raw( $input['mobile_banner_image_state']['mobile_banner_image_link'] ) : '#';
+		}
+
+		// Mobile banner code state.
+		if ( isset( $input['mobile_banner_code_state']['enabled'] ) ) {
+			$output['mobile_banner_code_state']['enabled'] = 'on';
+			$output['mobile_banner_code_state']['mobile_banner_code'] = isset( $input['mobile_banner_code_state']['mobile_banner_code'] ) ? wp_kses_post( $input['mobile_banner_code_state']['mobile_banner_code'] ) : '';
+			$output['mobile_banner_code_state']['mobile_banner_code_width'] = isset( $input['mobile_banner_code_state']['mobile_banner_code_width'] ) ? absint( $input['mobile_banner_code_state']['mobile_banner_code_width'] ) : 160;
+			$output['mobile_banner_code_state']['mobile_banner_code_height'] = isset( $input['mobile_banner_code_state']['mobile_banner_code_height'] ) ? absint( $input['mobile_banner_code_state']['mobile_banner_code_height'] ) : 600;
+		}
+
+		return $output;
+	}
+
+	/**
+	 * Render a text/number field.
+	 *
+	 * @param array $args Field arguments.
+	 */
+	public function field_text( $args ) {
+		$value = self::get_option( $args['id'], $args['std'] );
+		$type  = isset( $args['type'] ) ? $args['type'] : 'text';
 		?>
-
-		<script type="text/javascript">
-			var left_url = <?php echo json_encode(plugins_url('/includes/left_banner.php', __FILE__ )); ?>;
-			var right_url = <?php echo json_encode(plugins_url('/includes/right_banner.php', __FILE__ )); ?>;
-			var mobile_url = <?php echo json_encode(plugins_url('/includes/mobile_banner.php', __FILE__ )); ?>;
-			var clientWidth	= jQuery(window).width();
-			var screen_min_width	=	<?php echo $screen_w; ?>;		            
-			var MainContentW = <?php echo $MainContentW; ?>;	                
-			var LeftAdjust = <?php echo $LeftAdjust; ?>;
-			var RightAdjust = <?php echo $RightAdjust; ?>;
-			var TopAdjust = <?php echo $TopAdjust; ?>;
-			var left_banner_sticky_js = <?php echo $left_banner_is_sticky; ?>;
-			var right_banner_sticky_js = <?php echo $right_banner_is_sticky; ?>;
-			var device_is_mobile = <?php echo $device_is_mobile; ?>;
-			//call the banners display function
-			ShowAdDiv();
-			//call the position function on window resize
-			window.addEventListener('resize', AdsWindowResize, true);
-    </script>
-    <?php
-	}//end of load the banners
-
-/*** end of front end implemntation ***/
-
-/*** show ads on homepage only function ***/
-
-	//get the data from the database
-	$FloatedAds_data = get_option('flads_options');
-	//check if the homepage only option is checked
-	if (isset($FloatedAds_data['show_on_homepage']) && $FloatedAds_data['show_on_homepage'] == "1"){
-		function show_on_homepage_only () {			
-			if (!is_home() && !is_front_page()) {
-				global $post;
-				remove_action('wp_enqueue_scripts', 'FloatedAds_load_script');
- 				remove_action('wp_footer', 'FloatedAds_load_ads');
-		  }
-		}
-		add_action( 'get_header', 'show_on_homepage_only' );
+		<input type="<?php echo esc_attr( $type ); ?>" 
+			name="<?php echo esc_attr( self::OPTION_GROUP . '[' . $args['id'] . ']' ); ?>" 
+			id="<?php echo esc_attr( $args['id'] ); ?>" 
+			value="<?php echo esc_attr( $value ); ?>" 
+			class="regular-text flads-input" 
+			min="0" />
+		<?php if ( ! empty( $args['description'] ) ) : ?>
+			<p class="description flads-description"><?php echo wp_kses_post( $args['description'] ); ?></p>
+		<?php endif; ?>
+		<?php
 	}
-?>
+
+	/**
+	 * Render a checkbox field.
+	 *
+	 * @param array $args Field arguments.
+	 */
+	public function field_checkbox( $args ) {
+		$value = self::get_option( $args['id'], 0 );
+		?>
+		<label class="flads-toggle">
+			<input type="hidden" name="<?php echo esc_attr( self::OPTION_GROUP . '[' . $args['id'] . ']' ); ?>" value="0" />
+			<input type="checkbox" 
+				name="<?php echo esc_attr( self::OPTION_GROUP . '[' . $args['id'] . ']' ); ?>" 
+				id="<?php echo esc_attr( $args['id'] ); ?>" 
+				value="1" 
+				<?php checked( $value, 1 ); ?> 
+				class="flads-checkbox" />
+			<span class="flads-toggle-slider"></span>
+		</label>
+		<?php if ( ! empty( $args['description'] ) ) : ?>
+			<p class="description flads-description"><?php echo wp_kses_post( $args['description'] ); ?></p>
+		<?php endif; ?>
+		<?php
+	}
+
+	/**
+	 * Render the image upload field with conditional visibility.
+	 *
+	 * @param array $args Field arguments.
+	 */
+	public function field_image_upload( $args ) {
+		$option = self::get_option( $args['id'], array() );
+		$src    = isset( $option[ $args['img_src_key'] ] ) ? $option[ $args['img_src_key'] ] : '';
+		$img_id = isset( $option[ $args['img_id_key'] ] ) ? $option[ $args['img_id_key'] ] : '';
+		$has_image = ! empty( $src );
+		?>
+		<div class="flads-image-upload-wrapper">
+			<div class="flads-image-preview" id="<?php echo esc_attr( $args['id'] ); ?>_preview" style="<?php echo $has_image ? '' : 'display:none;'; ?>">
+				<img src="<?php echo $has_image ? esc_url( $src ) : ''; ?>" alt="" style="max-width:200px;max-height:200px;" />
+				<button type="button" class="button flads-remove-image" data-field="<?php echo esc_attr( $args['id'] ); ?>"><?php esc_html_e( 'Remove', 'floated-ads' ); ?></button>
+			</div>
+			<div class="flads-image-upload" id="<?php echo esc_attr( $args['id'] ); ?>_upload" style="<?php echo $has_image ? 'display:none;' : ''; ?>">
+				<button type="button" class="button flads-upload-image" data-field="<?php echo esc_attr( $args['id'] ); ?>"><?php esc_html_e( 'Upload Image', 'floated-ads' ); ?></button>
+			</div>
+			<input type="hidden" 
+				name="<?php echo esc_attr( self::OPTION_GROUP . '[' . $args['id'] . '][' . $args['img_src_key'] . ']' ); ?>" 
+				id="<?php echo esc_attr( $args['id'] . '_' . $args['img_src_key'] ); ?>" 
+				value="<?php echo esc_attr( $src ); ?>" />
+			<input type="hidden" 
+				name="<?php echo esc_attr( self::OPTION_GROUP . '[' . $args['id'] . '][' . $args['img_id_key'] . ']' ); ?>" 
+				id="<?php echo esc_attr( $args['id'] . '_' . $args['img_id_key'] ); ?>" 
+				value="<?php echo esc_attr( $img_id ); ?>" />
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render the conditional toggle field (checkbox + sub-fields).
+	 *
+	 * @param array $args Field arguments.
+	 */
+	public function field_conditional( $args ) {
+		$option = self::get_option( $args['id'], array() );
+		$enabled = isset( $option['enabled'] ) && 'on' === $option['enabled'];
+		?>
+		<div class="flads-conditional-wrapper">
+			<label class="flads-toggle flads-conditional-toggle">
+				<input type="hidden" name="<?php echo esc_attr( self::OPTION_GROUP . '[' . $args['id'] . '][enabled]' ); ?>" value="0" />
+				<input type="checkbox" 
+					name="<?php echo esc_attr( self::OPTION_GROUP . '[' . $args['id'] . '][enabled]' ); ?>" 
+					class="flads-conditional-checkbox flads-checkbox" 
+					value="on" 
+					<?php checked( $enabled, true ); ?> />
+				<span class="flads-toggle-slider"></span>
+				<span class="flads-toggle-label"><?php echo esc_html( $args['name'] ); ?></span>
+			</label>
+
+			<div class="flads-conditional-fields" id="<?php echo esc_attr( $args['id'] ); ?>_fields" style="<?php echo $enabled ? '' : 'display:none;'; ?>">
+				<?php foreach ( $args['sub_fields'] as $sub_field ) : ?>
+					<div class="flads-conditional-field">
+						<?php if ( 'image' === $sub_field['type'] ) : ?>
+							<label><?php echo esc_html( $sub_field['name'] ); ?></label>
+							<?php
+							$this->field_image_upload( array(
+								'id'         => $args['id'],
+								'img_src_key' => $sub_field['img_src_key'],
+								'img_id_key'  => $sub_field['img_id_key'],
+							) );
+							?>
+						<?php elseif ( 'text' === $sub_field['type'] ) : ?>
+							<label for="<?php echo esc_attr( $args['id'] . '_' . $sub_field['id'] ); ?>"><?php echo esc_html( $sub_field['name'] ); ?></label>
+							<?php
+							$sub_value = isset( $option[ $sub_field['id'] ] ) ? $option[ $sub_field['id'] ] : ( isset( $sub_field['std'] ) ? $sub_field['std'] : '' );
+							?>
+							<input type="text" 
+								name="<?php echo esc_attr( self::OPTION_GROUP . '[' . $args['id'] . '][' . $sub_field['id'] . ']' ); ?>" 
+								id="<?php echo esc_attr( $args['id'] . '_' . $sub_field['id'] ); ?>" 
+								value="<?php echo esc_attr( $sub_value ); ?>" 
+								class="regular-text" />
+							<?php if ( ! empty( $sub_field['desc'] ) ) : ?>
+								<p class="description"><?php echo wp_kses_post( $sub_field['desc'] ); ?></p>
+							<?php endif; ?>
+						<?php elseif ( 'number' === $sub_field['type'] ) : ?>
+							<label for="<?php echo esc_attr( $args['id'] . '_' . $sub_field['id'] ); ?>"><?php echo esc_html( $sub_field['name'] ); ?></label>
+							<?php
+							$sub_value = isset( $option[ $sub_field['id'] ] ) ? $option[ $sub_field['id'] ] : ( isset( $sub_field['std'] ) ? $sub_field['std'] : '' );
+							?>
+							<input type="number" 
+								name="<?php echo esc_attr( self::OPTION_GROUP . '[' . $args['id'] . '][' . $sub_field['id'] . ']' ); ?>" 
+								id="<?php echo esc_attr( $args['id'] . '_' . $sub_field['id'] ); ?>" 
+								value="<?php echo esc_attr( $sub_value ); ?>" 
+								class="small-text" min="0" />
+						<?php elseif ( 'textarea' === $sub_field['type'] ) : ?>
+							<label for="<?php echo esc_attr( $args['id'] . '_' . $sub_field['id'] ); ?>"><?php echo esc_html( $sub_field['name'] ); ?></label>
+							<?php
+							$sub_value = isset( $option[ $sub_field['id'] ] ) ? $option[ $sub_field['id'] ] : ( isset( $sub_field['std'] ) ? $sub_field['std'] : '' );
+							?>
+							<textarea 
+								name="<?php echo esc_attr( self::OPTION_GROUP . '[' . $args['id'] . '][' . $sub_field['id'] . ']' ); ?>" 
+								id="<?php echo esc_attr( $args['id'] . '_' . $sub_field['id'] ); ?>" 
+								class="large-text flads-code-textarea" 
+								rows="5"><?php echo esc_textarea( $sub_value ); ?></textarea>
+						<?php endif; ?>
+					</div>
+				<?php endforeach; ?>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render the admin settings page.
+	 */
+	public function render_admin_page() {
+		$active_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'general';
+		?>
+		<div class="wrap flads-wrap">
+			<div class="flads-header">
+				<h1 class="flads-page-title">
+					<span class="dashicons dashicons-align-wide flads-icon"></span>
+					<?php esc_html_e( 'FloatedAds', 'floated-ads' ); ?>
+					<span class="flads-version">v<?php echo esc_html( FLADS_VERSION ); ?></span>
+				</h1>
+				<p class="flads-subtitle"><?php esc_html_e( 'Configure your floated banner ads.', 'floated-ads' ); ?></p>
+			</div>
+
+			<div class="flads-notices">
+				<?php settings_errors( self::OPTION_GROUP ); ?>
+			</div>
+
+			<div class="flads-body">
+				<nav class="flads-tabs">
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=floated-ads&tab=general' ) ); ?>" 
+						class="flads-tab <?php echo 'general' === $active_tab ? 'active' : ''; ?>">
+						<span class="dashicons dashicons-admin-generic"></span>
+						<?php esc_html_e( 'General', 'floated-ads' ); ?>
+					</a>
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=floated-ads&tab=left_banner' ) ); ?>" 
+						class="flads-tab <?php echo 'left_banner' === $active_tab ? 'active' : ''; ?>">
+						<span class="dashicons dashicons-align-pull-left"></span>
+						<?php esc_html_e( 'Left Banner', 'floated-ads' ); ?>
+					</a>
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=floated-ads&tab=right_banner' ) ); ?>" 
+						class="flads-tab <?php echo 'right_banner' === $active_tab ? 'active' : ''; ?>">
+						<span class="dashicons dashicons-align-pull-right"></span>
+						<?php esc_html_e( 'Right Banner', 'floated-ads' ); ?>
+					</a>
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=floated-ads&tab=mobile_banner' ) ); ?>" 
+						class="flads-tab <?php echo 'mobile_banner' === $active_tab ? 'active' : ''; ?>">
+						<span class="dashicons dashicons-smartphone"></span>
+						<?php esc_html_e( 'Mobile Banner', 'floated-ads' ); ?>
+					</a>
+				</nav>
+
+				<div class="flads-content">
+					<form method="post" action="options.php" class="flads-form">
+						<?php
+						settings_fields( self::OPTION_GROUP );
+						$this->render_tab_content( $active_tab );
+						submit_button( esc_html__( 'Save Settings', 'floated-ads' ), 'primary flads-submit' );
+						?>
+					</form>
+				</div>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render tab content based on active tab.
+	 *
+	 * @param string $tab Active tab.
+	 */
+	private function render_tab_content( $tab ) {
+		?>
+		<table class="form-table flads-table">
+			<tbody>
+				<?php
+				switch ( $tab ) {
+					case 'general':
+						$this->render_general_tab();
+						break;
+					case 'left_banner':
+						$this->render_left_banner_tab();
+						break;
+					case 'right_banner':
+						$this->render_right_banner_tab();
+						break;
+					case 'mobile_banner':
+						$this->render_mobile_banner_tab();
+						break;
+				}
+				?>
+			</tbody>
+		</table>
+		<?php
+	}
+
+	/**
+	 * Render general settings tab.
+	 */
+	private function render_general_tab() {
+		do_settings_fields( 'floated-ads-general', 'flads_general' );
+	}
+
+	/**
+	 * Render left banner tab.
+	 */
+	private function render_left_banner_tab() {
+		?>
+		<tr>
+			<th scope="row"><?php esc_html_e( 'Active', 'floated-ads' ); ?></th>
+			<td>
+				<?php
+				$this->field_checkbox( array(
+					'id'          => 'left_banner_active',
+					'description' => esc_html__( 'Show the left banner area.', 'floated-ads' ),
+				) );
+				?>
+			</td>
+		</tr>
+		<tr>
+			<th scope="row"><?php esc_html_e( 'Sticky', 'floated-ads' ); ?></th>
+			<td>
+				<?php
+				$this->field_checkbox( array(
+					'id'          => 'left_banner_sticky',
+					'description' => esc_html__( 'Keep the banner fixed in position while scrolling.', 'floated-ads' ),
+				) );
+				?>
+			</td>
+		</tr>
+		<tr>
+			<th scope="row"><?php esc_html_e( 'Image Banner', 'floated-ads' ); ?></th>
+			<td>
+				<?php
+				$this->field_conditional( array(
+					'id'   => 'left_banner_image_state',
+					'name' => esc_html__( 'Use image banner?', 'floated-ads' ),
+					'sub_fields' => array(
+						array(
+							'type'        => 'image',
+							'name'        => esc_html__( 'Upload Banner Image', 'floated-ads' ),
+							'img_src_key' => 'left_banner_image',
+							'img_id_key'  => 'left_banner_image',
+						),
+						array(
+							'type' => 'text',
+							'id'   => 'left_banner_image_link',
+							'name' => esc_html__( 'Banner Link URL', 'floated-ads' ),
+							'std'  => '#',
+							'desc' => esc_html__( 'Leave as # if no link is needed.', 'floated-ads' ),
+						),
+					),
+				) );
+				?>
+			</td>
+		</tr>
+		<tr>
+			<th scope="row"><?php esc_html_e( 'Custom Code', 'floated-ads' ); ?></th>
+			<td>
+				<?php
+				$this->field_conditional( array(
+					'id'   => 'left_banner_code_state',
+					'name' => esc_html__( 'Use custom code banner?', 'floated-ads' ),
+					'sub_fields' => array(
+						array(
+							'type' => 'textarea',
+							'id'   => 'left_banner_code',
+							'name' => esc_html__( 'Banner Code', 'floated-ads' ),
+							'std'  => esc_html__( 'You can use any banner code here including Google AdSense code.', 'floated-ads' ),
+						),
+						array(
+							'type' => 'number',
+							'id'   => 'left_banner_code_width',
+							'name' => esc_html__( 'Banner Width (px)', 'floated-ads' ),
+							'std'  => 160,
+						),
+						array(
+							'type' => 'number',
+							'id'   => 'left_banner_code_height',
+							'name' => esc_html__( 'Banner Height (px)', 'floated-ads' ),
+							'std'  => 600,
+						),
+					),
+				) );
+				?>
+			</td>
+		</tr>
+		<?php
+	}
+
+	/**
+	 * Render right banner tab.
+	 */
+	private function render_right_banner_tab() {
+		?>
+		<tr>
+			<th scope="row"><?php esc_html_e( 'Active', 'floated-ads' ); ?></th>
+			<td>
+				<?php
+				$this->field_checkbox( array(
+					'id'          => 'right_banner_active',
+					'description' => esc_html__( 'Show the right banner area.', 'floated-ads' ),
+				) );
+				?>
+			</td>
+		</tr>
+		<tr>
+			<th scope="row"><?php esc_html_e( 'Sticky', 'floated-ads' ); ?></th>
+			<td>
+				<?php
+				$this->field_checkbox( array(
+					'id'          => 'right_banner_sticky',
+					'description' => esc_html__( 'Keep the banner fixed in position while scrolling.', 'floated-ads' ),
+				) );
+				?>
+			</td>
+		</tr>
+		<tr>
+			<th scope="row"><?php esc_html_e( 'Image Banner', 'floated-ads' ); ?></th>
+			<td>
+				<?php
+				$this->field_conditional( array(
+					'id'   => 'right_banner_image_state',
+					'name' => esc_html__( 'Use image banner?', 'floated-ads' ),
+					'sub_fields' => array(
+						array(
+							'type'        => 'image',
+							'name'        => esc_html__( 'Upload Banner Image', 'floated-ads' ),
+							'img_src_key' => 'right_banner_image',
+							'img_id_key'  => 'right_banner_image',
+						),
+						array(
+							'type' => 'text',
+							'id'   => 'right_banner_image_link',
+							'name' => esc_html__( 'Banner Link URL', 'floated-ads' ),
+							'std'  => '#',
+							'desc' => esc_html__( 'Leave as # if no link is needed.', 'floated-ads' ),
+						),
+					),
+				) );
+				?>
+			</td>
+		</tr>
+		<tr>
+			<th scope="row"><?php esc_html_e( 'Custom Code', 'floated-ads' ); ?></th>
+			<td>
+				<?php
+				$this->field_conditional( array(
+					'id'   => 'right_banner_code_state',
+					'name' => esc_html__( 'Use custom code banner?', 'floated-ads' ),
+					'sub_fields' => array(
+						array(
+							'type' => 'textarea',
+							'id'   => 'right_banner_code',
+							'name' => esc_html__( 'Banner Code', 'floated-ads' ),
+							'std'  => esc_html__( 'You can use any banner code here including Google AdSense code.', 'floated-ads' ),
+						),
+						array(
+							'type' => 'number',
+							'id'   => 'right_banner_code_width',
+							'name' => esc_html__( 'Banner Width (px)', 'floated-ads' ),
+							'std'  => 160,
+						),
+						array(
+							'type' => 'number',
+							'id'   => 'right_banner_code_height',
+							'name' => esc_html__( 'Banner Height (px)', 'floated-ads' ),
+							'std'  => 600,
+						),
+					),
+				) );
+				?>
+			</td>
+		</tr>
+		<?php
+	}
+
+	/**
+	 * Render mobile banner tab.
+	 */
+	private function render_mobile_banner_tab() {
+		?>
+		<tr>
+			<th scope="row"><?php esc_html_e( 'Active', 'floated-ads' ); ?></th>
+			<td>
+				<?php
+				$this->field_checkbox( array(
+					'id'          => 'show_mobile_banner',
+					'description' => esc_html__( 'Show footer banner on mobile devices and tablets.', 'floated-ads' ),
+				) );
+				?>
+			</td>
+		</tr>
+		<tr>
+			<th scope="row"><?php esc_html_e( 'Image Banner', 'floated-ads' ); ?></th>
+			<td>
+				<?php
+				$this->field_conditional( array(
+					'id'   => 'mobile_banner_image_state',
+					'name' => esc_html__( 'Use image banner?', 'floated-ads' ),
+					'sub_fields' => array(
+						array(
+							'type'        => 'image',
+							'name'        => esc_html__( 'Upload Banner Image', 'floated-ads' ),
+							'img_src_key' => 'mobile_banner_image',
+							'img_id_key'  => 'mobile_banner_image',
+						),
+						array(
+							'type' => 'text',
+							'id'   => 'mobile_banner_image_link',
+							'name' => esc_html__( 'Banner Link URL', 'floated-ads' ),
+							'std'  => '#',
+							'desc' => esc_html__( 'Leave as # if no link is needed.', 'floated-ads' ),
+						),
+					),
+				) );
+				?>
+			</td>
+		</tr>
+		<tr>
+			<th scope="row"><?php esc_html_e( 'Custom Code', 'floated-ads' ); ?></th>
+			<td>
+				<?php
+				$this->field_conditional( array(
+					'id'   => 'mobile_banner_code_state',
+					'name' => esc_html__( 'Use custom code banner?', 'floated-ads' ),
+					'sub_fields' => array(
+						array(
+							'type' => 'textarea',
+							'id'   => 'mobile_banner_code',
+							'name' => esc_html__( 'Banner Code', 'floated-ads' ),
+							'std'  => esc_html__( 'You can use any banner code here including Google AdSense code.', 'floated-ads' ),
+						),
+						array(
+							'type' => 'number',
+							'id'   => 'mobile_banner_code_width',
+							'name' => esc_html__( 'Banner Width (px)', 'floated-ads' ),
+							'std'  => 160,
+						),
+						array(
+							'type' => 'number',
+							'id'   => 'mobile_banner_code_height',
+							'name' => esc_html__( 'Banner Height (px)', 'floated-ads' ),
+							'std'  => 600,
+						),
+					),
+				) );
+				?>
+			</td>
+		</tr>
+		<?php
+	}
+
+	/**
+	 * Enqueue admin assets.
+	 *
+	 * @param string $hook Current admin page hook.
+	 */
+	public function enqueue_admin_assets( $hook ) {
+		if ( 'toplevel_page_floated-ads' !== $hook ) {
+			return;
+		}
+
+		// Enqueue WordPress media scripts.
+		wp_enqueue_media();
+		wp_enqueue_editor();
+
+		// Enqueue styles.
+		wp_enqueue_style(
+			'flads-admin',
+			FLADS_PLUGIN_URL . 'assets/css/admin.css',
+			array(),
+			FLADS_VERSION
+		);
+
+		// Enqueue scripts.
+		wp_enqueue_script(
+			'flads-admin',
+			FLADS_PLUGIN_URL . 'assets/js/admin.js',
+			array( 'jquery', 'wp-i18n' ),
+			FLADS_VERSION,
+			true
+		);
+
+		wp_localize_script(
+			'flads-admin',
+			'fladsAdmin',
+			array(
+				'mediaTitle'   => esc_html__( 'Select Banner Image', 'floated-ads' ),
+				'mediaButton'  => esc_html__( 'Use as Banner', 'floated-ads' ),
+				'removeText'   => esc_html__( 'Remove', 'floated-ads' ),
+				'uploadText'   => esc_html__( 'Upload Image', 'floated-ads' ),
+				'ajax_url'     => admin_url( 'admin-ajax.php' ),
+				'nonce'        => wp_create_nonce( 'flads_media_nonce' ),
+			)
+		);
+	}
+
+	/**
+	 * Enqueue frontend assets.
+	 */
+	public function enqueue_frontend_assets() {
+		$options = self::get_options();
+
+		// Check if homepage only.
+		if ( ! empty( $options['show_on_homepage'] ) && ! is_front_page() && ! is_home() ) {
+			return;
+		}
+
+		$left_active  = ! empty( $options['left_banner_active'] );
+		$right_active = ! empty( $options['right_banner_active'] );
+		$mobile_active = ! empty( $options['show_mobile_banner'] );
+
+		if ( ! $left_active && ! $right_active && ! $mobile_active ) {
+			return;
+		}
+
+		// Enqueue frontend styles.
+		wp_enqueue_style(
+			'flads-frontend',
+			FLADS_PLUGIN_URL . 'assets/css/frontend.css',
+			array(),
+			FLADS_VERSION
+		);
+
+		// Enqueue frontend script.
+		wp_enqueue_script(
+			'flads-frontend',
+			FLADS_PLUGIN_URL . 'assets/js/frontend.js',
+			array(),
+			FLADS_VERSION,
+			true
+		);
+
+		// Pass data to the frontend script.
+		wp_localize_script(
+			'flads-frontend',
+			'fladsData',
+			$this->get_frontend_js_data()
+		);
+	}
+
+	/**
+	 * Get all options.
+	 *
+	 * @return array
+	 */
+	private static function get_options() {
+		if ( null === self::$options ) {
+			self::$options = get_option( self::OPTION_GROUP, array() );
+		}
+		return self::$options;
+	}
+
+	/**
+	 * Get frontend JS data.
+	 *
+	 * @return array
+	 */
+	private function get_frontend_js_data() {
+		$options = self::get_options();
+		$data    = array(
+			'restUrl'          => rest_url( 'floated-ads/v1/banners' ),
+			'nonce'            => wp_create_nonce( 'wp_rest' ),
+			'mainContentWidth' => isset( $options['main_content_width'] ) ? absint( $options['main_content_width'] ) : 1220,
+			'minScreenWidth'   => isset( $options['container_min_width'] ) ? absint( $options['container_min_width'] ) : 1000,
+			'marginTop'        => isset( $options['FloatedAds_margin_top'] ) ? absint( $options['FloatedAds_margin_top'] ) : 0,
+			'marginLeft'       => isset( $options['FloatedAds_margin_left'] ) ? absint( $options['FloatedAds_margin_left'] ) : 0,
+			'marginRight'      => isset( $options['FloatedAds_margin_right'] ) ? absint( $options['FloatedAds_margin_right'] ) : 0,
+			'isMobile'         => wp_is_mobile() ? 1 : 0,
+			'banners'          => $this->get_banners_config(),
+		);
+
+		return $data;
+	}
+
+	/**
+	 * Get banners configuration for frontend.
+	 *
+	 * @return array
+	 */
+	private function get_banners_config() {
+		$options = self::get_options();
+		$banners = array();
+
+		// Left banner.
+		if ( ! empty( $options['left_banner_active'] ) ) {
+			$left_image_enabled = isset( $options['left_banner_image_state']['enabled'] ) && 'on' === $options['left_banner_image_state']['enabled'];
+			$left_code_enabled  = isset( $options['left_banner_code_state']['enabled'] ) && 'on' === $options['left_banner_code_state']['enabled'];
+
+			$left = array(
+				'position' => 'left',
+				'active'   => true,
+				'sticky'   => ! empty( $options['left_banner_sticky'] ),
+			);
+
+			if ( $left_image_enabled && ! empty( $options['left_banner_image_state']['left_banner_image']['src'] ) ) {
+				$left['type'] = 'image';
+				$left['src']  = esc_url( $options['left_banner_image_state']['left_banner_image']['src'] );
+				$left['link'] = esc_url( $options['left_banner_image_state']['left_banner_image_link'] );
+				$attachment_id = isset( $options['left_banner_image_state']['left_banner_image']['id'] ) ? absint( $options['left_banner_image_state']['left_banner_image']['id'] ) : 0;
+				if ( $attachment_id ) {
+					$image_data = wp_get_attachment_image_src( $attachment_id, 'full' );
+					if ( $image_data ) {
+						$left['width']  = $image_data[1];
+						$left['height'] = $image_data[2];
+					}
+				}
+			} elseif ( $left_code_enabled ) {
+				$left['type']   = 'code';
+				$left['code']   = isset( $options['left_banner_code_state']['left_banner_code'] ) ? $options['left_banner_code_state']['left_banner_code'] : '';
+				$left['width']  = isset( $options['left_banner_code_state']['left_banner_code_width'] ) ? absint( $options['left_banner_code_state']['left_banner_code_width'] ) : 160;
+				$left['height'] = isset( $options['left_banner_code_state']['left_banner_code_height'] ) ? absint( $options['left_banner_code_state']['left_banner_code_height'] ) : 600;
+			}
+
+			$banners['left'] = $left;
+		}
+
+		// Right banner.
+		if ( ! empty( $options['right_banner_active'] ) ) {
+			$right_image_enabled = isset( $options['right_banner_image_state']['enabled'] ) && 'on' === $options['right_banner_image_state']['enabled'];
+			$right_code_enabled  = isset( $options['right_banner_code_state']['enabled'] ) && 'on' === $options['right_banner_code_state']['enabled'];
+
+			$right = array(
+				'position' => 'right',
+				'active'   => true,
+				'sticky'   => ! empty( $options['right_banner_sticky'] ),
+			);
+
+			if ( $right_image_enabled && ! empty( $options['right_banner_image_state']['right_banner_image']['src'] ) ) {
+				$right['type'] = 'image';
+				$right['src']  = esc_url( $options['right_banner_image_state']['right_banner_image']['src'] );
+				$right['link'] = esc_url( $options['right_banner_image_state']['right_banner_image_link'] );
+				$attachment_id = isset( $options['right_banner_image_state']['right_banner_image']['id'] ) ? absint( $options['right_banner_image_state']['right_banner_image']['id'] ) : 0;
+				if ( $attachment_id ) {
+					$image_data = wp_get_attachment_image_src( $attachment_id, 'full' );
+					if ( $image_data ) {
+						$right['width']  = $image_data[1];
+						$right['height'] = $image_data[2];
+					}
+				}
+			} elseif ( $right_code_enabled ) {
+				$right['type']   = 'code';
+				$right['code']   = isset( $options['right_banner_code_state']['right_banner_code'] ) ? $options['right_banner_code_state']['right_banner_code'] : '';
+				$right['width']  = isset( $options['right_banner_code_state']['right_banner_code_width'] ) ? absint( $options['right_banner_code_state']['right_banner_code_width'] ) : 160;
+				$right['height'] = isset( $options['right_banner_code_state']['right_banner_code_height'] ) ? absint( $options['right_banner_code_state']['right_banner_code_height'] ) : 600;
+			}
+
+			$banners['right'] = $right;
+		}
+
+		// Mobile banner.
+		if ( ! empty( $options['show_mobile_banner'] ) ) {
+			$mobile_image_enabled = isset( $options['mobile_banner_image_state']['enabled'] ) && 'on' === $options['mobile_banner_image_state']['enabled'];
+			$mobile_code_enabled  = isset( $options['mobile_banner_code_state']['enabled'] ) && 'on' === $options['mobile_banner_code_state']['enabled'];
+
+			$mobile = array(
+				'position' => 'mobile',
+				'active'   => true,
+			);
+
+			if ( $mobile_image_enabled && ! empty( $options['mobile_banner_image_state']['mobile_banner_image']['src'] ) ) {
+				$mobile['type'] = 'image';
+				$mobile['src']  = esc_url( $options['mobile_banner_image_state']['mobile_banner_image']['src'] );
+				$mobile['link'] = esc_url( $options['mobile_banner_image_state']['mobile_banner_image_link'] );
+				$attachment_id = isset( $options['mobile_banner_image_state']['mobile_banner_image']['id'] ) ? absint( $options['mobile_banner_image_state']['mobile_banner_image']['id'] ) : 0;
+				if ( $attachment_id ) {
+					$image_data = wp_get_attachment_image_src( $attachment_id, 'full' );
+					if ( $image_data ) {
+						$mobile['width']  = $image_data[1];
+						$mobile['height'] = $image_data[2];
+					}
+				}
+			} elseif ( $mobile_code_enabled ) {
+				$mobile['type']   = 'code';
+				$mobile['code']   = isset( $options['mobile_banner_code_state']['mobile_banner_code'] ) ? $options['mobile_banner_code_state']['mobile_banner_code'] : '';
+				$mobile['width']  = isset( $options['mobile_banner_code_state']['mobile_banner_code_width'] ) ? absint( $options['mobile_banner_code_state']['mobile_banner_code_width'] ) : 160;
+				$mobile['height'] = isset( $options['mobile_banner_code_state']['mobile_banner_code_height'] ) ? absint( $options['mobile_banner_code_state']['mobile_banner_code_height'] ) : 600;
+			}
+
+			$banners['mobile'] = $mobile;
+		}
+
+		return $banners;
+	}
+
+	/**
+	 * Render banner HTML in footer via AJAX (legacy support).
+	 */
+	public function render_banner_html() {
+		$options = self::get_options();
+
+		// Check if homepage only.
+		if ( ! empty( $options['show_on_homepage'] ) && ! is_front_page() && ! is_home() ) {
+			return;
+		}
+
+		// Left banner.
+		if ( ! empty( $options['left_banner_active'] ) ) {
+			$this->render_single_banner( 'left', $options );
+		}
+
+		// Right banner.
+		if ( ! empty( $options['right_banner_active'] ) ) {
+			$this->render_single_banner( 'right', $options );
+		}
+
+		// Mobile banner.
+		if ( ! empty( $options['show_mobile_banner'] ) ) {
+			$this->render_single_banner( 'mobile', $options );
+		}
+	}
+
+	/**
+	 * Render a single banner HTML.
+	 *
+	 * @param string $side    Banner position (left/right/mobile).
+	 * @param array  $options Plugin options.
+	 */
+	private function render_single_banner( $side, $options ) {
+		$active_key     = 'left' === $side ? 'left_banner_active' : ( 'right' === $side ? 'right_banner_active' : 'show_mobile_banner' );
+		$image_state_key = $side . '_banner_image_state';
+		$code_state_key  = $side . '_banner_code_state';
+		$sticky_key      = $side . '_banner_sticky';
+
+		$image_enabled = isset( $options[ $image_state_key ]['enabled'] ) && 'on' === $options[ $image_state_key ]['enabled'];
+		$code_enabled  = isset( $options[ $code_state_key ]['enabled'] ) && 'on' === $options[ $code_state_key ]['enabled'];
+
+		if ( ! $image_enabled && ! $code_enabled ) {
+			return;
+		}
+
+		if ( 'mobile' === $side ) {
+			// Mobile banner rendered by JS.
+			return;
+		}
+
+		$div_id  = 'left' === $side ? 'divAdLeft' : 'divAdRight';
+		$sticky  = isset( $options[ $sticky_key ] ) && ! empty( $options[ $sticky_key ] );
+		$classes = 'flads-banner flads-banner-' . esc_attr( $side ) . ( $sticky ? ' flads-sticky' : '' );
+		?>
+		<div id="<?php echo esc_attr( $div_id ); ?>" class="<?php echo esc_attr( $classes ); ?>" style="display:none;">
+			<?php if ( $image_enabled && ! empty( $options[ $image_state_key ][ $side . '_banner_image' ]['src'] ) ) : ?>
+				<?php $link = isset( $options[ $image_state_key ][ $side . '_banner_image_link' ] ) ? $options[ $image_state_key ][ $side . '_banner_image_link' ] : '#'; ?>
+				<?php if ( '#' !== $link ) : ?>
+					<a href="<?php echo esc_url( $link ); ?>" target="_blank" rel="noopener noreferrer">
+				<?php endif; ?>
+					<img src="<?php echo esc_url( $options[ $image_state_key ][ $side . '_banner_image' ]['src'] ); ?>" alt="" />
+				<?php if ( '#' !== $link ) : ?>
+					</a>
+				<?php endif; ?>
+			<?php elseif ( $code_enabled && ! empty( $options[ $code_state_key ][ $side . '_banner_code' ] ) ) : ?>
+				<?php echo wp_kses_post( $options[ $code_state_key ][ $side . '_banner_code' ] ); ?>
+			<?php endif; ?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Register REST API routes.
+	 */
+	public function register_rest_routes() {
+		register_rest_route( 'floated-ads/v1', '/banners', array(
+			'methods'             => WP_REST_Server::READABLE,
+			'callback'            => array( $this, 'get_banners_rest' ),
+			'permission_callback' => '__return_true',
+		) );
+	}
+
+	/**
+	 * REST API callback to get banners data.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response
+	 */
+	public function get_banners_rest( $request ) {
+		return new WP_REST_Response( array(
+			'success' => true,
+			'data'    => $this->get_banners_config(),
+		), 200 );
+	}
+}
+
+// Initialize the plugin.
+FloatedAds::init();

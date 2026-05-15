@@ -1,0 +1,408 @@
+/* ===========================================
+   FloatedAds - Admin Styles
+   Modern WordPress admin design
+   =========================================== */
+
+:root {
+    --flads-primary: #2271b1;
+    --flads-primary-hover: #135e96;
+    --flads-accent: #00b9eb;
+    --flads-success: #46b450;
+    --flads-warning: #ffb900;
+    --flads-error: #dc3232;
+    --flads-bg: #f0f0f1;
+    --flads-card-bg: #ffffff;
+    --flads-text: #1d2327;
+    --flads-text-light: #646970;
+    --flads-border: #c3c4c7;
+    --flads-border-light: #e5e5e5;
+    --flads-radius: 8px;
+    --flads-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+    --flads-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.1);
+    --flads-transition: 0.2s ease;
+}
+
+/* ===========================================
+   Layout & Wrappers
+   =========================================== */
+
+.flads-wrap {
+    max-width: 960px;
+    margin: 20px 0 0 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+}
+
+.flads-header {
+    background: var(--flads-card-bg);
+    border: 1px solid var(--flads-border);
+    border-radius: var(--flads-radius);
+    padding: 24px 32px;
+    margin-bottom: 20px;
+    box-shadow: var(--flads-shadow);
+}
+
+.flads-page-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--flads-text);
+    line-height: 1.3;
+}
+
+.flads-icon {
+    color: var(--flads-primary);
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+}
+
+.flads-version {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--flads-text-light);
+    background: var(--flads-bg);
+    padding: 2px 10px;
+    border-radius: 20px;
+    margin-left: 8px;
+}
+
+.flads-subtitle {
+    margin: 8px 0 0 0;
+    color: var(--flads-text-light);
+    font-size: 14px;
+}
+
+.flads-notices {
+    margin-bottom: 20px;
+}
+
+.flads-notices .notice {
+    margin: 0 0 12px 0;
+}
+
+/* ===========================================
+   Body & Tabs
+   =========================================== */
+
+.flads-body {
+    background: var(--flads-card-bg);
+    border: 1px solid var(--flads-border);
+    border-radius: var(--flads-radius);
+    box-shadow: var(--flads-shadow);
+    overflow: hidden;
+}
+
+.flads-tabs {
+    display: flex;
+    background: var(--flads-bg);
+    border-bottom: 1px solid var(--flads-border);
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    gap: 2px;
+}
+
+.flads-tab {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 14px 24px;
+    text-decoration: none;
+    color: var(--flads-text-light);
+    font-size: 14px;
+    font-weight: 500;
+    border-bottom: 2px solid transparent;
+    transition: all var(--flads-transition);
+    margin-bottom: -1px;
+    background: transparent;
+}
+
+.flads-tab .dashicons {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+}
+
+.flads-tab:hover {
+    color: var(--flads-primary);
+    background: rgba(34, 113, 177, 0.04);
+}
+
+.flads-tab.active {
+    color: var(--flads-primary);
+    border-bottom-color: var(--flads-primary);
+    background: var(--flads-card-bg);
+}
+
+/* ===========================================
+   Content Area
+   =========================================== */
+
+.flads-content {
+    padding: 24px 32px 32px;
+}
+
+.flads-form .submit {
+    margin: 24px 0 0 0;
+    padding: 0;
+}
+
+.flads-submit.button-primary {
+    min-height: 40px;
+    padding: 8px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 4px;
+}
+
+/* ===========================================
+   Table & Fields
+   =========================================== */
+
+.flads-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+}
+
+.flads-table th {
+    width: 220px;
+    padding: 16px 20px 16px 0;
+    vertical-align: top;
+    font-weight: 600;
+    color: var(--flads-text);
+    font-size: 13px;
+}
+
+.flads-table td {
+    padding: 16px 0;
+    vertical-align: top;
+}
+
+.flads-table tr {
+    border-bottom: 1px solid var(--flads-border-light);
+}
+
+.flads-table tr:last-child {
+    border-bottom: none;
+}
+
+.flads-input {
+    min-width: 160px !important;
+}
+
+.flads-description {
+    margin: 6px 0 0 0 !important;
+    font-size: 13px !important;
+    color: var(--flads-text-light) !important;
+    font-style: normal !important;
+}
+
+/* ===========================================
+   Toggle Switch (Checkbox)
+   =========================================== */
+
+.flads-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+}
+
+.flads-checkbox {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.flads-toggle-slider {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    background: #c3c4c7;
+    border-radius: 12px;
+    transition: all var(--flads-transition);
+    flex-shrink: 0;
+}
+
+.flads-toggle-slider::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    background: #fff;
+    border-radius: 50%;
+    transition: all var(--flads-transition);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.flads-checkbox:checked + .flads-toggle-slider {
+    background: var(--flads-primary);
+}
+
+.flads-checkbox:checked + .flads-toggle-slider::after {
+    left: 23px;
+}
+
+.flads-checkbox:focus-visible + .flads-toggle-slider {
+    outline: 2px solid var(--flads-primary);
+    outline-offset: 2px;
+}
+
+/* ===========================================
+   Conditional Fields
+   =========================================== */
+
+.flads-conditional-wrapper {
+    margin: 0;
+}
+
+.flads-conditional-toggle {
+    margin-bottom: 12px;
+}
+
+.flads-toggle-label {
+    font-size: 13px;
+    color: var(--flads-text);
+    font-weight: 500;
+}
+
+.flads-conditional-fields {
+    background: #f6f7f7;
+    border: 1px solid var(--flads-border-light);
+    border-radius: 6px;
+    padding: 16px;
+    margin-top: 12px;
+}
+
+.flads-conditional-field {
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--flads-border-light);
+}
+
+.flads-conditional-field:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.flads-conditional-field > label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--flads-text);
+    margin-bottom: 6px;
+}
+
+.flads-conditional-field .description {
+    margin: 4px 0 0 0 !important;
+    font-size: 12px !important;
+    color: var(--flads-text-light) !important;
+}
+
+/* ===========================================
+   Image Upload
+   =========================================== */
+
+.flads-image-upload-wrapper {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.flads-image-preview {
+    position: relative;
+    display: inline-block;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid var(--flads-border-light);
+    background: #f6f7f7;
+}
+
+.flads-image-preview img {
+    display: block;
+    max-width: 200px;
+    max-height: 200px;
+    object-fit: contain;
+}
+
+.flads-image-preview .button {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: var(--flads-error);
+    color: #fff;
+    border: none;
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    opacity: 0.9;
+    transition: opacity var(--flads-transition);
+}
+
+.flads-image-preview .button:hover {
+    opacity: 1;
+    background: #b32d2e;
+}
+
+.flads-code-textarea {
+    min-height: 120px !important;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace !important;
+    font-size: 13px !important;
+    tab-size: 4;
+}
+
+/* ===========================================
+   Responsive
+   =========================================== */
+
+@media screen and (max-width: 782px) {
+    .flads-tabs {
+        flex-wrap: wrap;
+    }
+
+    .flads-tab {
+        flex: 1;
+        justify-content: center;
+        font-size: 13px;
+        padding: 10px 12px;
+    }
+
+    .flads-tab .dashicons {
+        display: none;
+    }
+
+    .flads-content {
+        padding: 16px;
+    }
+
+    .flads-table th {
+        width: auto;
+        display: block;
+        padding-bottom: 4px;
+    }
+
+    .flads-table td {
+        display: block;
+        padding-top: 4px;
+    }
+
+    .flads-header {
+        padding: 16px 20px;
+    }
+
+    .flads-page-title {
+        font-size: 20px;
+    }
+}
