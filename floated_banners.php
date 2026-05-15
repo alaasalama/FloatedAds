@@ -458,12 +458,12 @@ final class FloatedAds {
 				<button type="button" class="button flads-upload-image" data-field="<?php echo esc_attr( $args['id'] ); ?>"><?php esc_html_e( 'Upload Image', 'floated-ads' ); ?></button>
 			</div>
 			<input type="hidden" 
-				name="<?php echo esc_attr( self::OPTION_GROUP . '[' . $args['id'] . '][' . $args['img_src_key'] . ']' ); ?>" 
-				id="<?php echo esc_attr( $args['id'] . '_' . $args['img_src_key'] ); ?>" 
+				name="<?php echo esc_attr( self::OPTION_GROUP . '[' . $args['id'] . '][' . $args['img_src_key'] . '][src]' ); ?>" 
+				id="<?php echo esc_attr( $args['id'] . '_' . $args['img_src_key'] . '_src' ); ?>" 
 				value="<?php echo esc_attr( $src ); ?>" />
 			<input type="hidden" 
-				name="<?php echo esc_attr( self::OPTION_GROUP . '[' . $args['id'] . '][' . $args['img_id_key'] . ']' ); ?>" 
-				id="<?php echo esc_attr( $args['id'] . '_' . $args['img_id_key'] ); ?>" 
+				name="<?php echo esc_attr( self::OPTION_GROUP . '[' . $args['id'] . '][' . $args['img_id_key'] . '][id]' ); ?>" 
+				id="<?php echo esc_attr( $args['id'] . '_' . $args['img_id_key'] . '_id' ); ?>" 
 				value="<?php echo esc_attr( $img_id ); ?>" />
 		</div>
 		<?php
