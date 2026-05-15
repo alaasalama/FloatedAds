@@ -404,8 +404,17 @@ final class FloatedAds {
 	 */
 	public function field_image_upload( $args ) {
 		$option = self::get_option( $args['id'], array() );
-		$src    = isset( $option[ $args['img_src_key'] ] ) ? $option[ $args['img_src_key'] ] : '';
-		$img_id = isset( $option[ $args['img_id_key'] ] ) ? $option[ $args['img_id_key'] ] : '';
+
+		// The image data is stored as a nested array: [ 'id' => ..., 'src' => ... ]
+		// under the img_src_key (e.g., 'left_banner_image').
+		$image_data = isset( $option[ $args['img_src_key'] ] ) ? $option[ $args['img_src_key'] ] : array();
+		if ( is_array( $image_data ) ) {
+			$src    = isset( $image_data['src'] ) ? $image_data['src'] : '';
+			$img_id = isset( $image_data['id'] ) ? $image_data['id'] : '';
+		} else {
+			$src    = $image_data;
+			$img_id = isset( $option[ $args['img_id_key'] ] ) ? $option[ $args['img_id_key'] ] : '';
+		}
 		$has_image = ! empty( $src );
 		?>
 		<div class="flads-image-upload-wrapper">
